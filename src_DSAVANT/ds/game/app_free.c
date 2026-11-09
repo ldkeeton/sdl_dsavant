@@ -1,6 +1,8 @@
 /* frees a far block from app_malloc */
+#include "hostlib.h"
+
 app_free(p)
-long p;
+char *p;
 {
-	aztec_lfree(p);
+	host_free(p);
 }

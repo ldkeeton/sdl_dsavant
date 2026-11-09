@@ -22,7 +22,7 @@ extern int previous_level;
 extern char bane_source_filename[];
 extern unsigned char bane_header_buffer[];
 
-extern int bane_import_buffer;
+extern char *bane_import_buffer;
 extern struct bane_party_header bane_party_header;
 extern struct bane_character bane_character;
 extern struct spell_table_view spell_table;
@@ -31,8 +31,8 @@ extern int call_wait_sound(), load_message_string(), choose_game_file();
 extern int copy_through_char(), aztec_strcpy(), aztec_strcat(), aztec_strlen();
 extern int aztec_strcmp(), prompt_disk_swap(), call_show_area(),
 	draw_message_box();
-extern int aztec_open(), aztec_lseek(), aztec_read(), aztec_close(),
-	aztec_malloc();
+extern int aztec_open(), aztec_lseek(), aztec_read(), aztec_close();
+extern char *aztec_malloc();
 extern int aztec_free(), release_and_exit(), show_load_disk_error();
 extern int find_unused_member_icon(), random_below(), test_bit();
 extern int map_bane_party_selector(), set_bitmap_bit();

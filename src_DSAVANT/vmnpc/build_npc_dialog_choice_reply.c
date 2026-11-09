@@ -42,9 +42,9 @@ build_npc_dialog_choice_reply()
 			titlecase_string(choice_name);
 			append_npc_message_text(MSG_WHAT_1602, choice_name);
 		} else if (random_below(2) == 0)
-			append_npc_message_text(MSG_I_DON_T_KNOW_ABOUT_THAT, (unsigned)37108);
+			append_npc_message_text(MSG_I_DON_T_KNOW_ABOUT_THAT, "");
 		else
-			append_npc_message_text(MSG_I_DON_T_UNDERSTAND, (unsigned)37109);
+			append_npc_message_text(MSG_I_DON_T_UNDERSTAND, "");
 		return -1;
 	}
 	if (npc_dialog.secondary_choice != -1) {
@@ -60,7 +60,7 @@ build_npc_dialog_choice_reply()
 				npc_dialog.choice_auxiliary;
 			npc_dialog.response_value = 1;
 		} else
-			append_npc_message_text(MSG_YOUR_WORDS_ARE_CONFUSING, (unsigned)37110);
+			append_npc_message_text(MSG_YOUR_WORDS_ARE_CONFUSING, "");
 		return -1;
 	}
 	if (npc_dialog.choice_code == -1 &&
@@ -71,7 +71,7 @@ build_npc_dialog_choice_reply()
 			npc_dialog.primary_choice = 1;
 			return 0;
 		}
-		append_npc_message_text(MSG_HUH_1607, (unsigned)37111);
+		append_npc_message_text(MSG_HUH_1607, "");
 		return -1;
 	}
 	return 0;

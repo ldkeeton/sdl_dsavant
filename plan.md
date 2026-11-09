@@ -50,8 +50,25 @@ Instead the host build adds one step after preprocessing (`tools/c16.py`):
 - `int`→`short`, `long`→`int`, a bare `unsigned`/`signed`→`… short`
 - implicit-`int` function declarations and definitions get an explicit `short`,
   so declarations and definitions agree
+- an `L` suffix on a number is dropped, and `(unsigned)N` for N in
+  32768..65535 becomes `((short)N)`: the source writes 16-bit patterns such
+  as 0xff01 this way and compares them with `int`s
 - code from system headers and `host/` headers is left alone (detected from
   cpp line markers)
+
+Every game C file also gets a generated prototype for each external function
+the game C defines, with K&R parameter types promoted. Calls are then checked
+across files, which is how pointers passed as `long` (64-bit truncation)
+show up as compile errors. A file that declares a function itself keeps its
+own return type (`void f()` for an implicit-int definition is harmless).
+Functions called with fewer or more arguments than they take, as the DOS
+code does in a few places, are listed in `UNCHECKED` in `tools/build.py`.
+A by-value struct parameter is not checked either (the code passes
+look-alike structs with other tags).
+
+Game C, the `.s` replacements included, cannot include system headers: its
+include path holds Aztec's `stdio.h`, `errno.h` …, which the system headers
+would pick up. It calls the C library through `host/hostlib.h`.
 
 The sources stay as they are, and the DOS semantics (16-bit wraparound, sizes
 of structs) are kept. Pointers become 64-bit. Wherever the code stores a
@@ -64,9 +81,9 @@ Other game-C compile settings:
 - `-fno-builtin`, `-fno-common`, `-fno-toplevel-reorder`, so globals stay in
   definition order. `globals.c` relies on that order.
 - `-Dfar= -Dnear= -Dhuge=`, and the game's `main` is renamed to `ds_main`
-- game functions whose names clash with libc (e.g. `strstr`, which here
-  returns an offset) are renamed through a forced-include header. Otherwise
-  the exe's copy would interpose libc's for SDL too.
+- game names that clash with libc (`errno`; later e.g. `strstr`, which
+  here returns an offset) are renamed in `host/host16.h`. Otherwise the
+  exe's copy would interpose libc's for SDL too.
 
 ### 2. Asm replacements are C in the same place, compiled as "16-bit C"
 
@@ -193,14 +210,19 @@ decompiled game and its C replacements for the `.s` files stay in
 `src_DSAVANT/`. The new port code lives beside it:
 
 ```
-build.sh                 host build: same "every NAME/**.c" rule as before,
+build.sh                 host build (wraps tools/build.py),
                          TARGET=linux (default) or win
 run.sh                   builds if needed, then runs build_out/<target>/DS
+                         (the Windows build under Wine)
 tools/
+  build.py               the build: "every NAME/**.c" rule as before, cpp +
+                         c16 + prototypes, library members, overlays, stubs
   c16.py                 post-cpp int16/long32 rewriter
-  ovlink.sh              ld -r + objcopy per overlay, plus the ovmain table
+  ovlink.py              ld -r + objcopy per overlay, plus the ovmain table
 host/                    native C, not rewritten
   host16.h               forced include for game C (far/near, renames, ds_main)
+  hostlib.c/.h           C library calls for game C
+  stubs.c/.h             reports stubbed symbols (until every .s is replaced)
   platform.c/.h          SDL window, presenter, event loop, game thread, main()
   bios.c                 tick counter, key buffer, int 33h mouse, VGA DAC
   dosmem.c               emulated DOS blocks and EMS
@@ -219,10 +241,22 @@ already there. Objects go under `build_out/<target>/obj/`.
 
 ## Phases
 
-1. **Infrastructure:** `c16.py`, `host16.h`, the root `build.sh`/`run.sh`,
-   `ovlink.sh`; remove `src_DSAVANT/build.sh`/`run.sh`; compile all game C
-   with the rewrite, with temporary stubs for every asm symbol; fix the
-   pointer/int errors in the C.
+1. **Infrastructure** (done): `c16.py`, `host16.h`, the root
+   `build.sh`/`run.sh`, `build.py`, `ovlink.py`; `src_DSAVANT/build.sh`/
+   `run.sh` removed. All 821 game C files compile on both targets with
+   int/pointer conversions as errors; the link stubs the 84 functions and 2
+   data symbols still in `.s` (`STUBS=1`, the default), and both
+   `build_out/linux/DS` and `build_out/win/DS.exe` link, with the overlay
+   namespaces and data sections checked on ELF and PE. Fixes in the game C:
+   hard-coded data-segment addresses (VMNPC's `""` literals,
+   `&party_records[m].item_slots[g][s]`), struct assignment between
+   look-alike tags, `app_malloc`/`app_free`/`app_memmove` and
+   `bane_import_buffer` given pointer types, and the trial compile's syntax
+   errors. Left for later phases: 248 calls still have no declaration (all to
+   functions in `.s`; each gets a prototype when its C lands), and the
+   numeric addresses passed to asm functions (e.g. `set_bitmap_bit(… +
+   (unsigned)36116, …)` in `vdopt/trigger_item_cell_object.c`), which the
+   prototypes will flag once those functions are C.
 2. **Platform:** SDL window and presenter, BIOS timer, keyboard and mouse
    emulation, DOS file and memory emulation, the game thread.
 3. **Runtime and DS library:** `aztec_*`, overlay loader (data reset + ovmain table), keyboard

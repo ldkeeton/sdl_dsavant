@@ -29,6 +29,6 @@ int response_text_index;
 	} else {
 		if (npc_effect_message_buffer[0] == '-')
 			message_index -= (unsigned char)npc_effect_message_buffer[1];
-		append_npc_message_text(message_index, (unsigned)37122);
+		append_npc_message_text(message_index, "");
 	}
 }

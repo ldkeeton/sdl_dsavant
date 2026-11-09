@@ -44,7 +44,7 @@ handle_npc_dialog_choice()
 				if (party_records[npc_member_index].gold < 50L) {
 					pool_party_gold(npc_member_index);
 					if (party_records[npc_member_index].gold < 50L) {
-						append_npc_message_text(MSG_YOU_DON_T_HAVE_ENOUGH_GOLD, (unsigned)37123);
+						append_npc_message_text(MSG_YOU_DON_T_HAVE_ENOUGH_GOLD, "");
 						return;
 					}
 				}
@@ -57,7 +57,7 @@ handle_npc_dialog_choice()
 				} else
 					select_npc_event_message(-1, 0, 0);
 			} else
-				append_npc_message_text(MSG_SO_BE_IT_1609, (unsigned)37124);
+				append_npc_message_text(MSG_SO_BE_IT_1609, "");
 			return;
 		}
 		if (npc_dialog.response_active == 0
@@ -103,7 +103,7 @@ handle_npc_dialog_choice()
 				return;
 			}
 			if (npc_dialog.topic_2_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_WHEN, (unsigned)37125);
+				append_npc_message_text(MSG_I_DON_T_KNOW_WHEN, "");
 				return;
 			}
 			if (npc_dialog.topic_3_enabled == 1) {
@@ -111,7 +111,7 @@ handle_npc_dialog_choice()
 				return;
 			}
 			if (npc_dialog.topic_4_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_WHICH, (unsigned)37126);
+				append_npc_message_text(MSG_I_DON_T_KNOW_WHICH, "");
 				return;
 			}
 			if (npc_dialog.topic_5_enabled == 1) {
@@ -120,17 +120,17 @@ handle_npc_dialog_choice()
 			}
 			if (npc_dialog.topic_6_enabled == 1) {
 				if (selected_choice_index == 0) {
-					append_npc_message_text(MSG_I_AM_ALIVE, (unsigned)37127);
+					append_npc_message_text(MSG_I_AM_ALIVE, "");
 					return;
 				}
-				append_npc_message_text(MSG_I_WOULDN_T_KNOW, (unsigned)37128);
+				append_npc_message_text(MSG_I_WOULDN_T_KNOW, "");
 				return;
 			}
 		} else if (selected_choice_index == 0) {
-			append_npc_message_text(MSG_THAT_S_YOUR_OPINION, (unsigned)37129);
+			append_npc_message_text(MSG_THAT_S_YOUR_OPINION, "");
 			return;
 		} else {
-			append_npc_message_text(MSG_THAT_S_VERY_INTERESTING, (unsigned)37130);
+			append_npc_message_text(MSG_THAT_S_VERY_INTERESTING, "");
 			return;
 		}
 		break;
@@ -138,57 +138,57 @@ handle_npc_dialog_choice()
 		if (npc_dialog.response_active == 1) {
 			if (npc_dialog.choice_value_a == 0) {
 				if (npc_dialog.topic_1_enabled == 1)
-					append_npc_message_text(MSG_WHAT_ARE_YOU_LOOKING_FOR, (unsigned)37131);
+					append_npc_message_text(MSG_WHAT_ARE_YOU_LOOKING_FOR, "");
 				else if (npc_dialog.topic_3_enabled == 1 ||
 					npc_dialog.topic_5_enabled == 1 ||
 					npc_dialog.topic_6_enabled == 1)
-					append_npc_message_text(MSG_I_CAN_T_SAY, (unsigned)37132);
+					append_npc_message_text(MSG_I_CAN_T_SAY, "");
 				else
-					append_npc_message_text(MSG_POSSIBLY, (unsigned)37133);
+					append_npc_message_text(MSG_POSSIBLY, "");
 				return;
 			}
-			append_npc_message_text(MSG_I_WOULDN_T_KNOW, (unsigned)37134);
+			append_npc_message_text(MSG_I_WOULDN_T_KNOW, "");
 			return;
 		}
 		if (selected_choice_index == 0) {
-			append_npc_message_text(MSG_THAT_S_WHAT_YOU_THINK, (unsigned)37135);
+			append_npc_message_text(MSG_THAT_S_WHAT_YOU_THINK, "");
 			return;
 		}
-		append_npc_message_text(MSG_I_WOULDN_T_KNOW, (unsigned)37136);
+		append_npc_message_text(MSG_I_WOULDN_T_KNOW, "");
 		return;
 	case 5:
 		if (npc_dialog.response_active == 1) {
 			if (npc_dialog.choice_value_a == 0) {
 				if (npc_dialog.topic_1_enabled == 1)
-					append_npc_message_text(MSG_WHAT_DO_YOU_HAVE_TO_OFFER, (unsigned)37137);
+					append_npc_message_text(MSG_WHAT_DO_YOU_HAVE_TO_OFFER, "");
 				else
-					append_npc_message_text(MSG_POSSIBLY, (unsigned)37138);
+					append_npc_message_text(MSG_POSSIBLY, "");
 				return;
 			}
-			append_npc_message_text(MSG_I_WOULDN_T_KNOW, (unsigned)37139);
+			append_npc_message_text(MSG_I_WOULDN_T_KNOW, "");
 			return;
 		}
 		if (npc_dialog.choice_value_a > 0) {
 			dispatch_npc_effect_message(response_text_index + 3, MSG_HOW_1625);
 			return;
 		}
-		append_npc_message_text(MSG_THAT_S_GOOD_TO_KNOW, (unsigned)37140);
+		append_npc_message_text(MSG_THAT_S_GOOD_TO_KNOW, "");
 		return;
 	case 6:
 	case 7:
 		if (npc_dialog.response_active == 1) {
 			if (npc_dialog.topic_1_enabled == 1)
-				append_npc_message_text(MSG_WHAT_ARE_YOU_LOOKING_FOR, (unsigned)37141);
+				append_npc_message_text(MSG_WHAT_ARE_YOU_LOOKING_FOR, "");
 			else
-				append_npc_message_text(MSG_POSSIBLY, (unsigned)37142);
+				append_npc_message_text(MSG_POSSIBLY, "");
 			return;
 		}
-		append_npc_message_text(MSG_I_WILL_CONSIDER_IT, (unsigned)37143);
+		append_npc_message_text(MSG_I_WILL_CONSIDER_IT, "");
 		return;
 	case 8:
 		if (npc_dialog.response_active == 1) {
 			if (npc_dialog.topic_0_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_1630, (unsigned)37144);
+				append_npc_message_text(MSG_I_DON_T_KNOW_1630, "");
 				return;
 			}
 			if (npc_dialog.topic_1_enabled == 1) {
@@ -200,27 +200,27 @@ handle_npc_dialog_choice()
 				return;
 			}
 			if (npc_dialog.topic_4_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_WHICH, (unsigned)37145);
+				append_npc_message_text(MSG_I_DON_T_KNOW_WHICH, "");
 				return;
 			}
 			if (npc_dialog.topic_2_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_WHEN, (unsigned)37146);
+				append_npc_message_text(MSG_I_DON_T_KNOW_WHEN, "");
 				return;
 			}
 			dispatch_npc_effect_message(response_text_index + 3, MSG_HOW_1625);
 			return;
 		}
-		append_npc_message_text(MSG_PLEASE_CONTINUE, (unsigned)37147);
+		append_npc_message_text(MSG_PLEASE_CONTINUE, "");
 		return;
 	case 9:
 		if (npc_dialog.response_active == 1) {
 			if (npc_dialog.topic_0_enabled == 1
 				|| npc_dialog.topic_4_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_1630, (unsigned)37148);
+				append_npc_message_text(MSG_I_DON_T_KNOW_1630, "");
 				return;
 			}
 			if (npc_dialog.topic_1_enabled == 1) {
-				append_npc_message_text(MSG_TRY_AND_SEE, (unsigned)37149);
+				append_npc_message_text(MSG_TRY_AND_SEE, "");
 				return;
 			}
 			if (npc_dialog.topic_3_enabled == 1) {
@@ -228,13 +228,13 @@ handle_npc_dialog_choice()
 				return;
 			}
 			if (npc_dialog.topic_2_enabled == 1) {
-				append_npc_message_text(MSG_I_DON_T_KNOW_WHEN, (unsigned)37150);
+				append_npc_message_text(MSG_I_DON_T_KNOW_WHEN, "");
 				return;
 			}
 			dispatch_npc_effect_message(response_text_index + 3, MSG_HOW_1625);
 			return;
 		}
-		append_npc_message_text(MSG_THAT_S_VERY_INTERESTING, (unsigned)37151);
+		append_npc_message_text(MSG_THAT_S_VERY_INTERESTING, "");
 		return;
 	}
 	return;

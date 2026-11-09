@@ -53,7 +53,7 @@ struct load_header preserved_load_header;
 int intro_screen_number;
 struct bane_character bane_character;
 struct bane_party_header bane_party_header;
-int bane_import_buffer;
+char *bane_import_buffer;	/* was int: a pointer on the host */
 char bane_header_buffer[414];
 char game_load_path[50];
 char selected_game_drive[20];

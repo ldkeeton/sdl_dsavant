@@ -1,11 +1,7 @@
 /* Runtime stack and heap configuration defaults. */
-#if sizeof(char *) == 4
-int _STKSIZ = 8192/16;		/* (in paragraphs) (large data model) */
-int _STKRED = 1024;		/* size of RED zone (in bytes) */
-#else
+/* (small model; the large-model values were 8192/16 and 1024) */
 int _STKSIZ = 4096/16;		/* (in paragraphs) */
 int _STKRED = 2048;		/* size of RED zone (in bytes) */
-#endif
 
 int _HEAPSIZ = 4096/16;		/* (in paragraphs) */
 int _STKLOW = 0;		/* default is stack above heap (small only) */

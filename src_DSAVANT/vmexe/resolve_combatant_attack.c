@@ -164,7 +164,7 @@ int attack_index, attack_mode;
 				load_message_string(MSG_BACKSTAB + random_below(2),
 					combat_action_message_buffer);
 			if (attack_mode == ATTACK_THROW || attack_mode == ATTACK_SHOOT) {
-				dice = battle_group_ext[acting_group]->attack[attack_index].damage;
+				dice = *(struct random_step_spec *)&battle_group_ext[acting_group]->attack[attack_index].damage;
 				switch (battle_group_ext[acting_group]->attack_effect[attack_index]) {
 				case MWEAPON_THORNY_SPIKES: case MWEAPON_POISON_SPIKES:
 					fx_row = MISSILE_SPIKES;
@@ -345,7 +345,7 @@ int attack_index, attack_mode;
 					party_records[acting_unit].hand_attack[attack_index].hit_penalty +
 					attacker->aim_mod * 5 + stat_gap + 85 -
 					party_records[acting_unit].skills[SKILL_FIREARMS] / 2;
-			dice = party_records[acting_unit].hand_attack[attack_index].base;
+			dice = *(struct random_step_spec *)&party_records[acting_unit].hand_attack[attack_index].base;
 			atk = (struct member_attack *)
 				&party_records[acting_unit].hand_attack[attack_index];
 			weapon = party_records[acting_unit].equipped[attack_index];
@@ -372,7 +372,7 @@ int attack_index, attack_mode;
 					if (offhand != NO_ITEM &&
 						party_records[acting_unit].item_slots[0][offhand].item_type
 							== ITEM_MISSILE) {
-						dice = party_records[acting_unit].hand_attack[SECONDARY_HAND].base;
+						dice = *(struct random_step_spec *)&party_records[acting_unit].hand_attack[SECONDARY_HAND].base;
 						atk = (struct member_attack *)
 							&party_records[acting_unit].hand_attack[SECONDARY_HAND];
 						miss_chance +=
@@ -406,7 +406,7 @@ int attack_index, attack_mode;
 			attacker->stamina_max) +
 			battle_group_ext[acting_group]->attack[attack_index].accuracy_bonus +
 			attacker->aim_mod * 5 + stat_gap;
-		dice = battle_group_ext[acting_group]->attack[attack_index].damage;
+		dice = *(struct random_step_spec *)&battle_group_ext[acting_group]->attack[attack_index].damage;
 		atk = &battle_group_ext[acting_group]->attack[attack_index];
 		if (attack_mode == ATTACK_THROW || attack_mode == ATTACK_SHOOT)
 			dmg_bonus = 0;

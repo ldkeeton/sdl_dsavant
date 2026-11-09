@@ -11,6 +11,7 @@ extern int msg_dbs_fd;
 extern int data_file_fd;
 extern int hotspot_hit;
 extern int hotspot_rects[];
+extern call_show_area();
 long call_save_area();
 
 /* boxed prompt to insert a disk until DISK.HDR on it checks out; optionally
@@ -116,7 +117,7 @@ char *fname;
 	}
 }
 
-extern copy_through_char(), call_show_area();
+extern copy_through_char();
 
 /* Select the disk number and prompt for the matching data disk when needed. */
 ensure_game_disk()

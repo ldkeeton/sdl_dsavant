@@ -21,16 +21,16 @@ resolve_npc_dialog_reaction()
 
 	switch (npc_dialog.choice_code) {
 	case 0:
-		append_npc_message_text(npc_dialog_response_name, (unsigned)37112);
+		append_npc_message_text(npc_dialog_response_name, "");
 		break;
 	case 1:
 		if (npc_dialog_response_wait > 0) {
-			append_npc_message_text(npc_dialog_response_wait, (unsigned)37113);
+			append_npc_message_text(npc_dialog_response_wait, "");
 			wait_ticks_abortable(message_delay, 0);
 		}
 		break;
 	case 2:
-		append_npc_message_text(MSG_VERY_WELL_THEN, (unsigned)37114);
+		append_npc_message_text(MSG_VERY_WELL_THEN, "");
 		npc_dialog.primary_choice =
 			npc_dialog.choice_backup;
 		npc_dialog.choice_index =
@@ -41,24 +41,24 @@ resolve_npc_dialog_reaction()
 		reset_npc_dialog_response(npc_dialog.response_value);
 		break;
 	case 3:
-		append_npc_message_text(MSG_SO_BE_IT_1609, (unsigned)37115);
+		append_npc_message_text(MSG_SO_BE_IT_1609, "");
 		npc_dialog.response_value = -1;
 		break;
 	case 4:
-		append_npc_message_text(MSG_I_AM_WAITING, (unsigned)37116);
+		append_npc_message_text(MSG_I_AM_WAITING, "");
 		break;
 	case 5:
-		append_npc_message_text(MSG_DON_T_MENTION_IT, (unsigned)37117);
+		append_npc_message_text(MSG_DON_T_MENTION_IT, "");
 		break;
 	case 6:
-		append_npc_message_text(MSG_SAME_TO_YOU, (unsigned)37118);
+		append_npc_message_text(MSG_SAME_TO_YOU, "");
 		adjust_npc_attitudes(npc_member_index,
 			0 - (random_below(5) + 1), 0);
 		if (random_below(2) == 1)
 			npc_dialog.response_flag_1 = 1;
 		break;
 	case 7:
-		append_npc_message_text(MSG_CONSIDER_IT_FORGOTTEN, (unsigned)37119);
+		append_npc_message_text(MSG_CONSIDER_IT_FORGOTTEN, "");
 		npc_dialog.choice_index = -1;
 		npc_dialog.choice_auxiliary = 0;
 		npc_dialog.primary_choice = -1;
@@ -68,10 +68,10 @@ resolve_npc_dialog_reaction()
 		npc_dialog.response_value = -1;
 		break;
 	case 8:
-		append_npc_message_text(MSG_HELP_WITH_WHAT, (unsigned)37120);
+		append_npc_message_text(MSG_HELP_WITH_WHAT, "");
 		break;
 	case 9:
-		append_npc_message_text(MSG_HA_HA_HA_1615, (unsigned)37121);
+		append_npc_message_text(MSG_HA_HA_HA_1615, "");
 		if (npc_dialog_secondary_state == 0 && random_below(2) == 1 &&
 			party_records[npc_member_index].pad1[npc_record_index] < 50) {
 			adjust_npc_attitudes(npc_member_index, random_below(3) + 1, 0);

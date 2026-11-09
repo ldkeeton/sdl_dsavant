@@ -12,7 +12,7 @@ extern char far *mouse_pointer_shape;
 extern int text_line_index, text_line_color[];
 extern char text_line_buffer[];
 extern unsigned char npc_dialog_phoonzang_prefix[];
-extern int npc_member_index, ;
+extern int npc_member_index;
 extern int load_message_string(), str_subst_char(), set_mouse_pointer_shape();
 extern int aztec_setmem();
 extern int call_mouse_glide_to(), call_mouse_glide_back();
