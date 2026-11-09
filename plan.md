@@ -224,9 +224,10 @@ host/                    native C, not rewritten
   hostlib.c/.h           C library calls for game C
   stubs.c/.h             reports stubbed symbols (until every .s is replaced)
   platform.c/.h          SDL window, presenter, event loop, game thread, main()
-  bios.c                 tick counter, key buffer, int 33h mouse, VGA DAC
-  dosmem.c               emulated DOS blocks and EMS
-  dosfile.c              DOS-style file API over the host filesystem
+  bios.c/.h              tick counter, key buffer, int 33h mouse, VGA DAC
+  dosmem.c/.h            the emulated 1 MB address space, DOS blocks, EMS
+  dosfile.c/.h           DOS-style file API over the host filesystem
+  selftest.c             DS_SELFTEST=1: exercises the platform without the game
   audio.c                SDL audio stream, sample mixing
   opl.cpp                C wrapper around ymfm
   overlay.c              overlay data snapshot/reset, the ovmain table
@@ -257,8 +258,18 @@ already there. Objects go under `build_out/<target>/obj/`.
    numeric addresses passed to asm functions (e.g. `set_bitmap_bit(… +
    (unsigned)36116, …)` in `vdopt/trigger_item_cell_object.c`), which the
    prototypes will flag once those functions are C.
-2. **Platform:** SDL window and presenter, BIOS timer, keyboard and mouse
-   emulation, DOS file and memory emulation, the game thread.
+2. **Platform** (done): SDL window and presenter, BIOS timer, keyboard and
+   mouse emulation, DOS file and memory emulation, the game thread.
+   `dos_mem` is the whole real-mode address space, so a driver's `seg:off`
+   is `DOS_PTR(seg, off)`: the framebuffer is at A000:0000 and the BIOS tick
+   counter at 0040:006C (`tick_counter_ptr` now points there). DOS blocks
+   come from paragraphs 1800h..A000h (544 KB); EMS is 24 pages, each
+   handle's pages contiguous. The int 21h/16h/33h/10h calls are plain
+   functions returning AX or -(DOS error) (`dosfile.h`, `bios.h`); the
+   mouse handler runs on the SDL thread, like the interrupt it replaces.
+   Debug aids: F12 saves `shotNNN.bmp`, `DS_SHOT=file.bmp,secs` saves a
+   frame and quits, `DS_SELFTEST=1` runs a platform test in place of the
+   game; it passes on Linux and under Wine.
 3. **Runtime and DS library:** `aztec_*`, overlay loader (data reset + ovmain table), keyboard
    queue (`get_filtered_key`/`poll_filtered_key`), fonts
    (`load_font_file`, `get_font_glyph`, `draw_font_glyph`,

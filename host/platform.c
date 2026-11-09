@@ -1,15 +1,282 @@
-/* Host entry point.  (Phase 1: runs the game on the main thread; the SDL
-   window, presenter and game thread come in phase 2.) */
+/* Host entry point: the SDL window and presenter on the main thread, the
+   game on a thread of its own.
+
+   The main thread plays the PC's hardware: it feeds key and mouse events to
+   bios.c and redraws the window from the VGA framebuffer and DAC at the
+   display's rate, with the mouse pointer on top.  The game thread runs
+   ds_main and the overlays, unchanged.
+
+   Environment:
+     DS_GAME_DIR   where the data files are (default: the executable's dir)
+     DS_ASPECT=0   square pixels, integer scaling (default: 4:3, as on a CRT)
+     DS_SHOT=f.bmp[,secs]  save the screen after secs (default 3), then quit
+     DS_SELFTEST=1 exercise the platform (selftest.c) instead of the game
+   Keys: F12 saves the screen (shotNNN.bmp), Alt+Enter toggles fullscreen.
+*/
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#include "bios.h"
+#include "dosfile.h"
+#include "dosmem.h"
 #include "overlay.h"
+#include "platform.h"
 
 extern short ds_main(void);
+void host_selftest(void);       /* selftest.c */
+
+static SDL_Window *window;
+static SDL_Renderer *renderer;
+static SDL_Texture *texture;
+static int aspect = 1;          /* draw 320x200 as 4:3 */
+static Uint32 wake_event;
+static Uint32 exit_event;
+static SDL_ThreadID main_thread;
+
+void platform_wake(void)
+{
+    SDL_Event e;
+    SDL_zero(e);
+    e.type = wake_event;
+    SDL_PushEvent(&e);
+}
+
+static void platform_shutdown(int code)
+{
+    SDL_Quit();
+    exit(code);
+}
+
+void host_exit(int code)
+{
+    fflush(stdout);
+    fflush(stderr);
+    if (SDL_GetCurrentThreadID() == main_thread)
+        platform_shutdown(code);
+    SDL_Event e;
+    SDL_zero(e);
+    e.type = exit_event;
+    e.user.code = code;
+    SDL_PushEvent(&e);
+    for (;;)
+        SDL_Delay(1000);
+}
+
+static int SDLCALL game_thread(void *data)
+{
+    (void)data;
+    const char *t = SDL_getenv("DS_SELFTEST");
+    if (t && t[0] == '1')
+        host_selftest();
+    overlay_init();
+    ds_main();
+    host_exit(0);
+    return 0;
+}
+
+/* Logical (presentation) coordinates to screen pixels and back. */
+static float logical_h(void) { return aspect ? 240.0f : (float)SCREEN_H; }
+
+static void to_screen(float lx, float ly, float *x, float *y)
+{
+    *x = lx;
+    *y = ly * SCREEN_H / logical_h();
+}
+
+static uint32_t frame_rgb[SCREEN_W * SCREEN_H];   /* the last frame drawn */
+
+/* Save the last frame as a BMP (F12, or DS_SHOT). */
+static void save_shot(const char *path)
+{
+    static int n;
+    char name[64];
+    if (!path) {
+        snprintf(name, sizeof name, "shot%03d.bmp", n++);
+        path = name;
+    }
+    SDL_Surface *s = SDL_CreateSurfaceFrom(SCREEN_W, SCREEN_H, SDL_PIXELFORMAT_XRGB8888,
+                                           frame_rgb, SCREEN_W * 4);
+    if (s && SDL_SaveBMP(s, path))
+        fprintf(stderr, "saved %s\n", path);
+    else
+        fprintf(stderr, "screenshot %s: %s\n", path, SDL_GetError());
+    SDL_DestroySurface(s);
+}
+
+static void draw_frame(void)
+{
+    uint32_t pal[256];
+
+    for (int i = 0; i < 256; i++) {
+        uint32_t r = vga_dac[i][0] & 63, g = vga_dac[i][1] & 63, b = vga_dac[i][2] & 63;
+        r = r << 2 | r >> 4;
+        g = g << 2 | g >> 4;
+        b = b << 2 | b >> 4;
+        pal[i] = 0xff000000u | r << 16 | g << 8 | b;
+    }
+    const uint8_t *fb = DOS_PTR(VGA_SEGMENT, 0);
+    int graphics = vga_get_mode() == 0x13;
+    if (graphics)
+        for (int i = 0; i < SCREEN_W * SCREEN_H; i++)
+            frame_rgb[i] = pal[fb[i]];
+    else
+        memset(frame_rgb, 0, sizeof frame_rgb);
+    struct pointer_state p;
+    if (graphics && bios_pointer(&p)) {
+        for (int y = 0; y < p.h && p.y + y < SCREEN_H; y++) {
+            uint32_t *row = frame_rgb + (p.y + y) * SCREEN_W;
+            const uint8_t *src = p.image + (size_t)y * p.stride;
+            for (int x = 0; x < p.w && p.x + x < SCREEN_W; x++)
+                if (src[x] != 0xff)
+                    row[p.x + x] = pal[src[x]];
+        }
+        SDL_HideCursor();
+    } else {
+        SDL_ShowCursor();
+    }
+    SDL_UpdateTexture(texture, 0, frame_rgb, SCREEN_W * 4);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_FRect dst = {0, 0, SCREEN_W, logical_h()};
+    SDL_RenderTexture(renderer, texture, 0, &dst);
+    SDL_RenderPresent(renderer);
+}
+
+static void handle(SDL_Event *e)
+{
+    if (e->type == SDL_EVENT_QUIT)
+        platform_shutdown(0);
+    if (e->type == exit_event)
+        platform_shutdown(e->user.code);
+    switch (e->type) {
+    case SDL_EVENT_KEY_DOWN:
+        if (e->key.key == SDLK_RETURN && (e->key.mod & SDL_KMOD_ALT)) {
+            SDL_SetWindowFullscreen(window, !(SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN));
+            break;
+        }
+        if (e->key.key == SDLK_F12) {
+            save_shot(0);
+            break;
+        }
+        bios_key_event(&e->key);
+        break;
+    case SDL_EVENT_MOUSE_MOTION: {
+        float x, y;
+        SDL_ConvertEventToRenderCoordinates(renderer, e);
+        to_screen(e->motion.x, e->motion.y, &x, &y);
+        bios_mouse_motion(x, y);
+        break;
+    }
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP: {
+        float x, y;
+        SDL_ConvertEventToRenderCoordinates(renderer, e);
+        to_screen(e->button.x, e->button.y, &x, &y);
+        bios_mouse_motion(x, y);
+        bios_mouse_button(e->button.button, e->type == SDL_EVENT_MOUSE_BUTTON_DOWN);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+static void take_warp(void)
+{
+    float x, y, wx, wy;
+    if (!bios_take_warp(&x, &y))
+        return;
+    if (SDL_RenderCoordinatesToWindow(renderer, x, y * logical_h() / SCREEN_H, &wx, &wy))
+        SDL_WarpMouseInWindow(window, wx, wy);
+}
 
 int main(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    overlay_init();
-    ds_main();
-    return 0;
+    const char *a = SDL_getenv("DS_ASPECT");
+    if (a && a[0] == '0')
+        aspect = 0;
+
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+        fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+        return 1;
+    }
+    main_thread = SDL_GetCurrentThreadID();
+    wake_event = SDL_RegisterEvents(2);
+    exit_event = wake_event + 1;
+
+    if (!SDL_CreateWindowAndRenderer("Crusaders of the Dark Savant", SCREEN_W * 3,
+                                     (int)logical_h() * 3, SDL_WINDOW_RESIZABLE,
+                                     &window, &renderer)) {
+        fprintf(stderr, "SDL_CreateWindowAndRenderer: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_SetRenderVSync(renderer, 1);
+    SDL_SetRenderLogicalPresentation(renderer, SCREEN_W, (int)logical_h(),
+                                     aspect ? SDL_LOGICAL_PRESENTATION_LETTERBOX
+                                            : SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XRGB8888,
+                                SDL_TEXTUREACCESS_STREAMING, SCREEN_W, SCREEN_H);
+    if (!texture) {
+        fprintf(stderr, "SDL_CreateTexture: %s\n", SDL_GetError());
+        return 1;
+    }
+    SDL_SetTextureScaleMode(texture, aspect ? SDL_SCALEMODE_PIXELART : SDL_SCALEMODE_NEAREST);
+
+    dosmem_init();
+    const char *dir = SDL_getenv("DS_GAME_DIR");
+    dosfile_init(dir ? dir : SDL_GetBasePath());
+    bios_init();
+
+    if (!SDL_CreateThread(game_thread, "game", 0)) {
+        fprintf(stderr, "SDL_CreateThread: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    /* DS_SHOT=file.bmp[,seconds]: save a frame that long after startup
+       (default 3 s), then quit. */
+    char shot_path[512] = "";
+    uint64_t shot_at = 0;
+    const char *shot = SDL_getenv("DS_SHOT");
+    if (shot && *shot) {
+        snprintf(shot_path, sizeof shot_path, "%s", shot);
+        char *comma = strchr(shot_path, ',');
+        double secs = 3;
+        if (comma) {
+            *comma = 0;
+            secs = atof(comma + 1);
+        }
+        shot_at = SDL_GetTicksNS() + (uint64_t)(secs * 1e9);
+    }
+
+    const uint64_t frame = 1000000000ull / 60;
+    uint64_t next = SDL_GetTicksNS();
+    for (;;) {
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+            handle(&e);
+        take_warp();
+        draw_frame();
+        if (shot_at && SDL_GetTicksNS() >= shot_at) {
+            save_shot(shot_path);
+            platform_shutdown(0);
+        }
+        /* With vsync, present waited for the display; without it, keep to
+           60 Hz, still taking events as they come. */
+        next += frame;
+        uint64_t now = SDL_GetTicksNS();
+        if (next < now)
+            next = now;
+        while (now < next) {
+            if (SDL_WaitEventTimeout(&e, (Sint32)((next - now) / 1000000)))
+                handle(&e);
+            now = SDL_GetTicksNS();
+            if (next - now < 1000000)
+                break;
+        }
+    }
 }
