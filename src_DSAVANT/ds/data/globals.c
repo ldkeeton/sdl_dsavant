@@ -1,0 +1,179 @@
+/* The game's uninitialized globals, in data segment order. */
+
+#include "structs/filehdr.h"
+#include "structs/loadrec.h"
+#include "structs/location.h"
+#include "structs/member.h"
+#include "structs/msgdir.h"
+#include "structs/ovlitem.h"
+#include "structs/pathedge.h"
+#include "structs/pcrec.h"
+#include "structs/questmap.h"
+#include "structs/rgnstate.h"
+#include "structs/slotevt.h"
+#include "structs/slotrec.h"
+#include "structs/slotstat.h"
+#include "structs/sndslot.h"
+#include "structs/actslot.h"
+
+long party_redraw_elapsed_ticks;
+long party_redraw_current_tick;
+long party_redraw_last_tick;
+int scenario_header_fd;
+char unused_9086[2];
+struct pc_file_header pc_file_header;
+int screen_cache_index;
+int saved_screen_pending;
+int saved_screen_slot;
+long screen_cache[2];
+int party_return_state;
+int npc_id_decoy;
+int message_delay;
+int startup_option;
+int startup_hardware_flags;
+char unused_9054[2];
+int menu_selection_index;
+int dialog_button;
+int dialog_selection;
+int startup_check_stage;
+char unused_8f4a[258];
+int last_map_piece_index;
+int party_world_x;
+int party_world_y;
+int party_cell_x;
+int party_cell_y;
+int party_map_piece;
+int previous_level;
+int previous_party_world_x;
+int previous_party_world_y;
+int previous_party_cell_x;
+int previous_party_cell_y;
+int previous_party_map_piece;
+int previous_party_facing;
+int saved_cell_x;
+int saved_cell_y;
+int saved_map_piece;
+int saved_level;
+int saved_position_extra;
+int trigger_facing;
+int capture_center_marker_mode;
+int marker_mode;
+long game_time;
+long game_time_aux_a;
+long game_time_aux_b;
+char flag_bitset[176];
+struct saved_region_blocks party_region;
+long saved_area_a;
+long saved_area_b;
+long base_screen_area;
+int adjacent_object_type[4];
+int maze_object_cell_bitmap[64];
+int floor_item_cell_bits[64];
+int current_map_block_a[64];
+int explored_cell_bitmap[64];
+int member_roster_index[7];
+int picked_item_slot;
+struct path_edge path_edges[32];
+char faction_attitudes[12][12];
+struct location_record location_records[26];
+struct slot_event slot_event_logs[22][5];
+struct slot_record slot_records[22];
+struct quest_map quest_maps[11];
+long battle_experience;
+int selected_item_record;
+int selected_item_slot;
+struct member_ext *battle_group_ext[7];
+struct member_rec *ally_battle_group;
+struct member_rec *battle_groups[6];
+struct overlay_list overlay_list;
+int monster_group_count;
+int acting_group;
+int acting_unit;
+int dest_alt_arg;
+int party_screen_animation_state;
+int party_screen_done;
+int party_entry_flag;
+int e1_event_flag;
+int requested_row_limit;
+int row_limit;
+int party_entry_mode;
+int story_music_enabled;
+int story_score_number;
+int story_score_volume;
+int cell_slot_ref[3][3];
+char action_slot_mode[10];
+struct action_slot action_slot_table[3][3][10];
+int effect_frame_phase;
+char unused_831c[4];
+int maze_gate_frame;
+int party_slot_frame[6];
+int current_level;
+int game_state;
+struct status_pair party_effects[6];
+int party_status_heading;
+int party_facing;
+int party_status_frame_seen;
+int party_status_frame_step;
+int party_status_frame;
+long party_status_areas[6];
+char answer_word[24];
+int loaded_score_num;
+struct slot_rec slot_recs[18];
+char data_path_buf[80];
+int party_char_count;
+int member_icon[6];
+long panel_area[6];
+struct pc_rec party_records[6];
+long saved_screen_ref[5];
+char saved_screen_file[5][20];
+int saved_screen_kind[5];
+int maze_state;
+int maze_variant;
+int current_maze;
+char picture_slot_used[18];
+char picture_slot_number[18];
+int code_index_4;
+int code_index_3;
+int code_index_2;
+int code_index_1;
+int hotspot_hit;
+char hotspot_keys[64];
+int hotspot_rects[128];
+int space_key_hit;
+int escape_key_hit;
+int *npc_id_clue_relay;
+int answer_length;
+int code_char_index;
+char code_characters[100];
+int loaded_sound_id;
+struct load_header scenario_header;
+struct sound_slot_info_rec sound_slot_info[17];
+struct master_header master_header;
+struct disk_header disk_header;
+int message_not_found;
+int message_cache_next;
+int message_block_current;
+char message_block_buffer[5120];
+int message_cache_ids[4];
+struct message_directory message_directory;
+int *npc_id_target;
+int *npc_id_answer_relay;
+char code_table[50];
+char code_char_message_index;
+char unused_0fc8[13];
+char list_entry_text[20][20];
+int npc_id;
+int *npc_id_address;
+int mouse_active;
+char far *pointer_image_zero;
+char far *mouse_pointer_shape;
+char far *pointer_image_two;
+int msg_dbs_fd;
+int data_file_fd;
+char far *runtime_buffer_1k;
+char far *runtime_buffer_4k_a;
+char far *runtime_buffer_4k_b;
+struct maze_cells *maze_data;
+struct maze_tables *maze_tables;
+struct maze_change *maze_change_log;
+struct floor_item *floor_items;

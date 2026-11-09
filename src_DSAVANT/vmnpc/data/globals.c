@@ -1,0 +1,81 @@
+/* The NPC overlay's uninitialized globals.  ln lays commons out in the
+   reverse of their order here, so the last is at the lowest address.
+   Each *_next array is the row after its base: the list code shifts rows
+   down through them. */
+
+#include "structs/npc.h"
+
+int last_npc_text_entry_key;
+int npc_second_choice_message_base;
+int npc_first_choice_message_base;
+int npc_member_index;
+int npc_dialog_response_wait;
+int npc_dialog_response_name;
+int npc_matched_choice_offset;
+int npc_first_choice_count;
+char npc_dialog_to_word[10];
+char npc_dialog_not_word[10];
+int npc_dialog_mode;
+char npc_dialog_synonym_lists[38][50];
+char npc_dialog_pronoun_words[11][10];
+char npc_dialog_question_words[7][10];
+struct npc_pronoun_swap npc_pronoun_swaps[5];
+char npc_dialog_modal_words[7][10];
+char npc_dialog_interjection_words[10][10];
+char npc_dialog_filler_words[7][10];
+char npc_dialog_verb_words[10][10];
+int npc_total_choice_count;
+struct npc_message_option npc_dialog_choice_entries[100];
+int npc_dialog_text_has_question;
+struct npc_dialog_state npc_dialog;
+int known_spell_ids[40];
+char unused_9d6e[132];
+int npc_dialog_shop_mode;
+int npc_dialog_secondary_state;
+int npc_dialog_option_state;
+int npc_selected_dialog_option;
+int npc_dialog_initial_state;
+int npc_negotiation_tactic;
+int npc_pilfer_roll_bias;
+char npc_substitution_text[80];
+int npc_item_list_item_id[30];
+int npc_item_list_count;
+int member_item_slot_indices[20];
+int member_item_count;
+int npc_item_scroll_top;
+int npc_item_list_item_count[30];
+char npc_item_list_name[30][22];
+unsigned char npc_item_list_glyph[30];
+char npc_item_value_unit_text[10];
+long npc_item_list_value[30];
+unsigned char npc_item_list_item_type[30];
+unsigned char npc_item_list_gender_mask[30];
+unsigned char npc_item_list_race_mask[30][2];
+unsigned char npc_item_list_profession_mask[30][2];
+int list_row_count[20];
+char list_row_name[20][22];
+int list_row_glyph[20];
+int list_row_marked[20];
+int npc_spell_target;
+int npc_charm_bonus;
+long npc_gold_paid_total;
+char npc_effect_message_buffer[80];
+char npc_action_bitmap_copy[2];
+char npc_choice_message_buffer[80];
+int npc_dialog_departure_flag;
+char quest_map_subject_buffer[24];
+char quest_map_name_buffer[24];
+char npc_event_actor_buffer[24];
+unsigned char npc_event_message_seen[110];
+char quest_map_message_buffer[256];
+int npc_message_ready;
+int npc_cell_effect_frame[3][3];
+int npc_encounter_sound;
+int npc_area_bottom;
+int party_redraw_interval;
+int text_line_index;
+int text_line_color[4];
+char text_line_buffer[4][128];
+struct npc_record npc_record;
+int npc_record_index;
+int npc_action_state;

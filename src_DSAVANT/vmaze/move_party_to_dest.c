@@ -1,0 +1,55 @@
+/* moves the party to table entry dest: unpacks its cell, piece and level,
+   switching level first when it differs from the current one */
+
+#include "structs/maze.h"
+
+extern struct maze_tables *maze_tables;
+#include "structs/mazecell.h"
+#include "structs/rgnstate.h"
+extern struct saved_region_blocks party_region;
+
+extern struct maze_cells *maze_data;
+extern int current_level;
+extern int party_cell_x, party_cell_y, party_map_piece, dest_alt_arg,
+	save_location_flag;
+extern int saved_level, saved_map_piece, saved_cell_x, saved_cell_y;
+extern int party_world_x, party_world_y, region_step_flag, location_changed;
+
+move_party_to_dest(dest)
+int dest;
+{
+	int loc, level;
+
+	check_at_saved_location();
+	loc = maze_tables->flags[dest];
+	mark_region_bits(get_bits(loc, 10, 2));	/* bits 10-11 */
+	party_cell_x = get_bits(loc, 0, 3);	/* bits 0-2: cell x */
+	party_cell_y = get_bits(loc, 3, 3);	/* bits 3-5: cell y */
+	party_map_piece = get_bits(loc, 6, 4);	/* bits 6-9: map piece */
+	level = maze_tables->arg[dest];
+	dest_alt_arg = 0;
+	if (level == 99) {	/* 99: no level, pass party_mask instead */
+		dest_alt_arg = maze_tables->party_mask[dest];
+		level = -1;
+	}
+	if (save_location_flag) {
+		saved_level = level;
+		saved_map_piece = party_map_piece;
+		saved_cell_x = party_cell_x;
+		saved_cell_y = party_cell_y;
+	}
+	/* piece origin tables at +0x490 (x) and +0x4a0 (y) give world coords */
+	party_world_x = maze_data->origin_x[party_map_piece] + party_cell_x;
+	party_world_y = maze_data->origin_y[party_map_piece] + party_cell_y;
+	party_region.region = maze_tables->map_first[party_map_piece];
+	region_step_flag = 0;
+	if (level == current_level)
+		redraw_maze_view();
+	else {
+		save_level_state();
+		enter_level(level);
+		if (current_level >= 0)	/* negative: no level loaded */
+			redraw_maze_view();
+	}
+	location_changed = 1;
+}

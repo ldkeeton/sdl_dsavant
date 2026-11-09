@@ -1,0 +1,12 @@
+apps
+build_out
+build_out_new
+__pycache__
+.cache
+dos_compilers
+trash
+node_modules
+*.asm
+*.lnk
+*.mk
+*.inc

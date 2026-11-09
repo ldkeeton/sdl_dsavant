@@ -1,0 +1,27 @@
+/* reads the 4-bit wall field on one side (selector 0..3) of the maze cell at
+   (map, x, y) with world coords (wx, wy); sides 0/1 read the plane 0/1 field
+   (at +0x90/+0x290), sides 2/3 resolve the shared edge's neighbour piece */
+
+#include "structs/mazecell.h"
+
+extern struct maze_cells *maze_data;
+extern int read_packed_field();
+extern int get_north_cell_wall();
+extern int get_west_cell_wall();
+
+get_cell_wall(selector, map, x, y, wx, wy)
+int selector, map, x, y, wx, wy;
+{
+	switch (selector) {
+	case 0:
+		return read_packed_field(maze_data->wall_a,
+			(map << 6) + (y << 3) + x, 4);	/* 8x8 cells per piece, 4-bit field */
+	case 1:
+		return read_packed_field(maze_data->wall_b,
+			(map << 6) + (y << 3) + x, 4);
+	case 2:
+		return get_north_cell_wall(wx, wy, x, y, map);
+	case 3:
+		return get_west_cell_wall(wx, wy, x, y, map);
+	}
+}

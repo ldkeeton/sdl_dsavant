@@ -1,0 +1,28 @@
+/* dissolves left,top..right,bottom into view, or shows it at once when
+   scenario_header.no_dissolve is set; parks the mouse pointer at a fixed spot
+   around the
+   effect */
+#include "structs/loadrec.h"
+extern struct load_header scenario_header;
+extern int mouse_active;
+extern char far *mouse_pointer_shape;
+extern int set_mouse_pointer_shape();
+
+dissolve_or_show_area(left, top, right, bottom)
+int left, top, right, bottom;
+{
+	if (!scenario_header.no_dissolve) {			/* dissolve animation enabled */
+		if (mouse_active) {			/* pointer is on: hide it while the screen changes */
+			set_mouse_pointer_shape(mouse_pointer_shape);
+			call_mouse_glide_to(302, 164, 0);
+		}
+		call_dissolve_area(left, top, right, bottom, 0);
+		if (mouse_active) {
+			call_mouse_glide_back(302, 164, 0);
+			set_mouse_pointer_shape(0L);		/* no shape: restore the default pointer */
+		}
+	} else {
+		call_show_area(left, top, right, bottom);
+	}
+	flush_keyboard();
+}

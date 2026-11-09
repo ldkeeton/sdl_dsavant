@@ -1,0 +1,111 @@
+/* state 0x0a: tears down the map screen, loads the sound and monster picture
+   slots, saves the two screen areas and sets up the melee party */
+
+#include "structs/member.h"
+#include "structs/ovlitem.h"
+#include "msg.h"
+
+extern int battle_setup_done, row_limit, loaded_score_num;
+extern int requested_row_limit, e1_event_flag;
+extern int show_melee_result;		/* nonzero unless the melee goes to VMNPC */
+extern int saved_screen_pending, saved_screen_slot;
+extern int party_return_state, monster_group_count, npc_melee;
+extern int game_state;
+extern long screen_cache[];		/* cached full-screen far pointers */
+extern long saved_area_a, saved_area_b;
+extern long party_redraw_last_tick;
+extern long far *tick_counter_ptr;
+extern struct member_rec *battle_groups[];	/* 0x1a4-byte member records */
+extern struct member_ext *battle_group_ext[];
+	/* 0xe8-byte extended member records */
+extern unsigned char picture_slot_number[], picture_slot_used[];
+extern struct overlay_list overlay_list;
+
+extern clamp_between(), call_is_music_playing(), free_loaded_score(),
+	free_current_maze(), free_picture_slot(), load_sound_file(),
+	load_monster_picture(), restore_saved_screen(),
+	release_and_exit(), redraw_glyph_strip(), setup_melee_party(),
+	wait_for_hotspot_timeout(), aztec_strcpy(), titlecase_string(),
+	aztec_strlen(), load_message_string(), show_centered_message(),
+	tick_party_combatants();
+extern char *aztec_malloc();
+extern long call_cache_area(), call_save_area();
+
+start_melee_battle()
+{
+	int i, len;
+	char buf[82];
+	/* Never touched; sized like one member, its extension and an overlay. */
+	struct member_rec unused_group;
+	struct member_ext unused_ext;
+	struct overlay_item unused_overlay;
+
+	battle_setup_done = 1;
+	row_limit = clamp_between(requested_row_limit, 0, 2);
+	e1_event_flag = 0;
+	if (loaded_score_num != -1) {	/* -1: no score loaded */
+		while (call_is_music_playing())
+			;
+		free_loaded_score(0);
+	}
+	free_current_maze();
+	free_picture_slot(0);
+	free_picture_slot(4);
+	free_picture_slot(6);
+	/* 1: load flag; sound number repeated as the slot */
+	load_sound_file(5, 5, 1);
+	load_sound_file(6, 6, 1);
+	load_sound_file(7, 7, 1);
+	load_sound_file(10, 10, 1);
+	load_sound_file(11, 11, 1);
+	load_sound_file(12, 12, 1);
+	load_monster_picture(9, 7);	/* records 9/82 into picture slots 7/12 */
+	load_monster_picture(82, 12);
+	/* cache the play area; 2: memory store, 0: no file */
+	screen_cache[0] = call_cache_area(72, 33, 247, 143, 2, 0);
+	if (saved_screen_pending) {
+		restore_saved_screen(saved_screen_slot, 1);
+		saved_screen_pending = 0;
+	}
+	screen_cache[1] = call_cache_area(72, 33, 247, 143, 2, 0);
+	for (i = 0; i < 7; i++) {	/* 7 party slots */
+		battle_group_ext[i] = (struct member_ext *)aztec_malloc(232);
+			/* extended record */
+		battle_groups[i] = (struct member_rec *)aztec_malloc(420);
+			/* member record */
+		if (battle_group_ext[i] == 0 || battle_groups[i] == 0)
+			release_and_exit(29);
+	}
+	for (i = 0; i < 12; i++) {	/* 12 overlay slots, skip the count */
+		overlay_list.items[i] = (struct overlay_item *)aztec_malloc(24);
+		if (overlay_list.items[i] == 0)
+			release_and_exit(29);
+		overlay_list.items[i]->code = 255;	/* 0xff: slot free */
+	}
+	for (i = 15; i < 18; i++) {	/* the 3 monster picture slots */
+		picture_slot_number[i] = 255;	/* 0xff: slot empty */
+		picture_slot_used[i] = 0;
+	}
+	saved_area_a = call_save_area(8, 165, 314, 198);		/* box corners */
+	saved_area_b = call_save_area(65, 146, 255, 164);
+	load_monster_picture(2, 1);	/* monster 2 into picture slot 1 */
+	load_monster_picture(3, 2);	/* monster 3 into picture slot 2 */
+	redraw_glyph_strip(0);
+	setup_melee_party();
+	show_melee_result = party_return_state == 18 ? 0 : 1;
+	npc_melee = party_return_state == 18 ? 1 : 0;
+	if (party_return_state == 18		/* 0x12: to the NPC state */
+	    && monster_group_count > 1) {
+		redraw_glyph_strip(1);
+		wait_for_hotspot_timeout(1);
+		aztec_strcpy(buf, battle_group_ext[1]);
+		titlecase_string(buf);
+		len = aztec_strlen(buf);
+		/* 0xdb8: message id appended to the member's name */
+		load_message_string(MSG_CALLS_FOR_HELP, buf + len);
+		show_centered_message(buf, 17);	/* 17: message sound */
+	}
+	tick_party_combatants();
+	party_redraw_last_tick = *tick_counter_ptr;
+	game_state = 11;		/* next state: redraw the party */
+}
