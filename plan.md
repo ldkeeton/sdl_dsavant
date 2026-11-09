@@ -1,8 +1,20 @@
 # Plan: host (SDL) build of src_DSAVANT
 
-Goal: build and run the game natively on the host (Linux first) with SDL,
+Goal: build and run the game natively on Linux and Windows with SDL3,
 replacing every 8086 `.s` module with C, and changing the existing game C only
 where it cannot work on a 64-bit host.
+
+Decided:
+
+- **Platforms:** Linux (native gcc) and Windows (cross-compiled from Linux with
+  mingw-w64). Both are 64-bit.
+- **SDL3**
+- **`.s` files:** each one is deleted as soon as its `.c` replacement lands.
+  The DOS build is not kept; git history has it.
+- **`build.sh`/`run.sh`:** new host scripts at the repo root, run from the
+  root. `src_DSAVANT/build.sh` and `src_DSAVANT/run.sh` (DOSBox-X/Aztec) are
+  removed.
+- **OPL emulator:** ymfm (BSD-3), vendored.
 
 ## What exists today
 
@@ -89,20 +101,24 @@ Handles are fake 16-bit segments, so `long` handles fit in 32 bits exactly as
 before. `get_font_glyph` returns a real host pointer, because game C
 dereferences it.
 
-### 4. Overlays are shared objects, loaded with `dlopen`
+### 4. Overlays are linked into the exe, each in its own namespace
 
-Each overlay becomes `VMAZE.so`, and so on. `aztec_ovloader("VMAZE")` calls
-`dlclose` on the previous overlay, then `dlopen`s the new one and runs
-`ovmain`. This copies the DOS behaviour exactly:
+Windows DLLs can't resolve symbols back into the exe the way a `dlopen`'d `.so`
+can. So both platforms use one approach, with no `dlopen`:
 
-- initialized data and BSS are fresh on every load
-- each overlay keeps its own namespace (`-Bsymbolic`), so duplicate function
-  names across overlays do not clash
-- overlays reach DS symbols through the exe (`-rdynamic`)
+- each overlay's objects, plus the `libshared` members DS does not already
+  link (this is what `ln` did), are combined with `ld -r` into a single object,
+  `VMAZE.o`
+- `objcopy` makes every symbol defined in that object local, except `ovmain`,
+  which becomes `ovmain_VMAZE`. Duplicate names across overlays then no longer
+  clash. Undefined symbols stay global, so they resolve to DS.
+- the overlay's `.data`/`.bss` are renamed to per-overlay sections, with
+  bounds symbols. At startup the loader snapshots each overlay's initial
+  data. `aztec_ovloader("VMAZE")` restores the snapshot, zeroes the BSS and
+  calls `ovmain_VMAZE` through a generated table. As on DOS, every load starts
+  with fresh data.
 
-To match `ln` (an overlay uses DS's copy of any shared module DS already
-links), each overlay is linked against `libshared.a` minus the members the exe
-already contains.
+This gives one `DS`/`DS.exe` and no overlay files.
 
 ### 5. The drivers are linked into the exe
 
@@ -141,51 +157,75 @@ text-mode CR/LF is left as is (the game uses binary I/O).
 
 ### 8. Sound
 
+The whole music player is in `play/*.s`: it parses the score, handles tempo
+and volume, and writes registers to the AdLib OPL2 chip at port 388h. The chip
+itself only synthesizes. Digitized samples are pushed out one byte per PIT
+tick by the CPU, to the PC speaker, a parallel-port DAC or the OPL.
+
 - **Phase A:** a `PLAY` stub that reports no device, so the game runs silent.
-- **Phase B:** port `play/` (the OPL path) to C and drive an OPL2 emulator.
-  The emulator would be either a small one written here, or an
-  MIT/BSD-licensed one vendored in (e.g. emu8950). The PIT sample interrupt
-  becomes the SDL audio callback, ticking the music player at its original
-  rate. Digitized samples are mixed into the same stream. MPU-401 output is
-  optional, later.
+- **Phase B:** port `play/` (the OPL path) to C. `opl_write` feeds ymfm's
+  `ym3812` (OPL2) core, which renders PCM into an SDL3 audio stream. ymfm is
+  C++, so it sits in `third_party/ymfm/` behind a small C wrapper
+  (`host/opl.cpp`, `extern "C"`), the only C++ in the build. The music timer
+  interrupt becomes a tick driven by the audio stream, at the original rate.
+  Digitized samples are mixed into the same stream as plain PCM. The PC
+  speaker, LPT DAC and MPU-401 paths are dropped.
 
-## Scope questions (default in **bold**)
+## Toolchains
 
-- **DOS build:** the `.s` files are deleted as their C replacements land (as
-  asked), so `build.sh` stops working for DS/VGA/PLAY. Git history keeps the
-  DOS version. Keeping both buildable would mean leaving each `.s` beside its
-  `.c` (`build.sh` prefers `.s`), which is easy if you'd rather keep it.
-- **SDL version:** **SDL2** (2.32 is installed; SDL3 3.4 is installed too and
-  easy to switch to).
+| Target | Compiler | SDL3 | Output |
+|---|---|---|---|
+| Linux (default) | host `gcc` 15 | system `libsdl3-dev` (3.4.2), via `pkg-config sdl3` | `build_out/linux/DS` |
+| Windows (`TARGET=win`) | `x86_64-w64-mingw32-gcc` 13 (Ubuntu `mingw-w64` package) | official SDL3 3.4.2 mingw release, installed in `/usr/local/x86_64-w64-mingw32`; `PKG_CONFIG_LIBDIR=/usr/local/x86_64-w64-mingw32/lib/pkgconfig` | `build_out/win/DS.exe` + `SDL3.dll` |
+
+Both are installed, and a test SDL3 program cross-links to a PE32+ exe. Wine is
+installed, so Windows builds can be smoke-tested here. `build.sh` reads
+`MINGW_SDL3_PREFIX` if SDL3 is somewhere else.
+
+Under both targets `int` is 32 bits (Windows is LLP64), so the `c16.py`
+rewrite is the same. Host code avoids POSIX-only calls: threads, timing and
+file lookup go through SDL3, or through a small `#ifdef _WIN32`.
 
 ## New files
 
+Everything is run from the repo root (`./build.sh`, `./run.sh`). The
+decompiled game and its C replacements for the `.s` files stay in
+`src_DSAVANT/`. The new port code lives beside it:
+
 ```
-src_DSAVANT/
-  build_host.sh          host build (same "every NAME/**.c" rule as build.sh)
-  run_host.sh            runs build_out_host/DS with the game files
-  tools/c16.py           post-cpp int16/long32 rewriter
-  include/host16.h       forced include for game C (far/near, renames, ds_main)
-  host/                  native C, not rewritten
-    platform.c/.h        SDL window, presenter, event loop, game thread, main()
-    bios.c               tick counter, key buffer, int 33h mouse, VGA DAC
-    dosmem.c             emulated DOS blocks and EMS
-    dosfile.c            DOS-style file API over the host filesystem
-    audio.c              SDL audio stream (phase B: OPL emulation + samples)
+build.sh                 host build: same "every NAME/**.c" rule as before,
+                         TARGET=linux (default) or win
+run.sh                   builds if needed, then runs build_out/<target>/DS
+tools/
+  c16.py                 post-cpp int16/long32 rewriter
+  ovlink.sh              ld -r + objcopy per overlay, plus the ovmain table
+host/                    native C, not rewritten
+  host16.h               forced include for game C (far/near, renames, ds_main)
+  platform.c/.h          SDL window, presenter, event loop, game thread, main()
+  bios.c                 tick counter, key buffer, int 33h mouse, VGA DAC
+  dosmem.c               emulated DOS blocks and EMS
+  dosfile.c              DOS-style file API over the host filesystem
+  audio.c                SDL audio stream, sample mixing
+  opl.cpp                C wrapper around ymfm
+  overlay.c              overlay data snapshot/reset, the ovmain table
+third_party/ymfm/        vendored ymfm (BSD-3), only the OPL files
+src_DSAVANT/             game source; each .s is replaced by a .c in place
+apps/DSAVANT/            original game data (unchanged)
 ```
 
-Output goes to `build_out_host/`: `DS` (exe), `V*.so` overlays, and the
-original data files copied from `../apps/DSAVANT`. Saves are kept there, as
-`build.sh` does now.
+Output goes to `build_out/<target>/` (in `.gitignore`): `DS`/`DS.exe` and the
+original data files, copied from `apps/DSAVANT` without overwriting saves
+already there. Objects go under `build_out/<target>/obj/`.
 
 ## Phases
 
-1. **Infrastructure:** `c16.py`, `host16.h`, `build_host.sh`; compile all game C
+1. **Infrastructure:** `c16.py`, `host16.h`, the root `build.sh`/`run.sh`,
+   `ovlink.sh`; remove `src_DSAVANT/build.sh`/`run.sh`; compile all game C
    with the rewrite, with temporary stubs for every asm symbol; fix the
    pointer/int errors in the C.
 2. **Platform:** SDL window and presenter, BIOS timer, keyboard and mouse
    emulation, DOS file and memory emulation, the game thread.
-3. **Runtime and DS library:** `aztec_*`, overlay loader (`dlopen`), keyboard
+3. **Runtime and DS library:** `aztec_*`, overlay loader (data reset + ovmain table), keyboard
    queue (`get_filtered_key`/`poll_filtered_key`), fonts
    (`load_font_file`, `get_font_glyph`, `draw_font_glyph`,
    `measure_text_width`, `read_font_glyph`), RNG, bitfields,
@@ -200,8 +240,10 @@ original data files copied from `../apps/DSAVANT`. Saves are kept there, as
 5. **First run:** intro → main menu → load or create a party → maze → combat.
    Fix whatever the 64-bit host exposes: pointer truncation, global order,
    uninitialized reads.
-6. **Sound:** port PLAY, OPL emulation, samples.
-7. **Cleanup:** remove `.s` files, update `readme.md`, and add a struct-offset
+6. **Sound:** port PLAY, vendor ymfm, samples.
+7. **Windows:** `TARGET=win` build, smoke test under Wine, then a run on real
+   Windows.
+8. **Cleanup:** update `readme.md`, and add a struct-offset
    check that compares `offsetof` with the `/* +0x.. */` comments in
    `include/structs`.
 
