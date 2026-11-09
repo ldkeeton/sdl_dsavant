@@ -210,10 +210,48 @@ def preprocess(t, g, force):
     c16.rewrite_int_words(toks, edits)
     rw = c16.Rewriter(toks, edits)
     rw.run()
-    open(os.path.join(ROOT, g.rw), 'w', encoding='latin-1').write(edits.apply(src))
+    out = edits.apply(src)
+    if g.src.replace(os.sep, '/').endswith('/data/globals.c'):
+        out = dos_commons(out)
+    open(os.path.join(ROOT, g.rw), 'w', encoding='latin-1').write(out)
     json.dump({'defs': rw.defs, 'statics': sorted(rw.statics), 'decls': rw.decls},
               open(os.path.join(ROOT, g.defs), 'w'))
     return None
+
+
+def dos_commons(text):
+    """Lays out a */data/globals.c as Aztec's ln did.  These files declare
+    an overlay's (or DS's) uninitialized globals, one a line; ln laid such
+    commons out in the reverse of their order, end to end with no padding,
+    and the code relies on it (an array runs into the next; the maze's
+    render queue is one 17-byte row a byte global).  So the declarations
+    are emitted last first, each aligned to 1 (which also stops gcc
+    aligning large arrays to 32).  The text is preprocessed: the lines
+    after a marker for the main file are its own."""
+    lines = text.split('\n')
+    main = None
+    cur = None
+    n = 0
+    keep, decls = [], []
+    for line in lines:
+        m = re.match(r'# (\d+) "([^"]*)"', line)
+        if m:
+            n, cur = int(m.group(1)), m.group(2)
+            if main is None:
+                main = cur
+            keep.append(line)
+            continue
+        if cur == main and line.strip():
+            if not re.fullmatch(r'[^;{}]*;\s*', line):
+                die('%s:%d: not a single declaration: %s' % (main, n, line))
+            decls.append((n, line.rstrip()[:-1]))
+        else:
+            keep.append(line)
+        n += 1
+    for n, d in reversed(decls):
+        keep.append('# %d "%s"' % (n, main))
+        keep.append(d + ' __attribute__((aligned(1)));')
+    return '\n'.join(keep) + '\n'
 
 
 def load_defs(g):

@@ -8,6 +8,13 @@
 #define near
 #define huge
 
+/* Aztec laid out structs with no padding past 2-byte alignment, and the
+   game's structs are read from its data files and laid over DOS memory:
+   tools/check_structs.py checks them against their DOS offsets.  Host
+   headers that define structs (overlay.h) put the default back around
+   them. */
+#pragma pack(1)
+
 /* The game's main runs on its own thread, called by the host's main. */
 #define main ds_main
 

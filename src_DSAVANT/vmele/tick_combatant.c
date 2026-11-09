@@ -18,7 +18,7 @@ extern set_bitmap_bit();
 tick_combatant(group, unit, regen, drain)
 int group, unit, regen, drain;
 {
-	int step_max;			/* also read below as a party index */
+	int step_max;
 	struct combatant *fighter;
 	int hp_delta, i, died, row, col;
 
@@ -67,9 +67,12 @@ int group, unit, regen, drain;
 		fighter->poison_strength = 0;
 	i = fighter->speed_mod;		/* haste or slow wears off */
 	fighter->speed_mod = i < 0 ? i + 1 : i > 0 ? i - 1 : i;
-	/* party: Snake Speed (skills[20]) climbs back to its floor */
-	if (group == 0 && party_records[step_max].skills[20] > 0) {
-		i = party_records[step_max].skills[20] / 10 + 2;
+	/* party: Snake Speed (skills[20]) climbs back to its floor.  The DOS
+	   code indexed party_records with step_max, unset unless the fighter
+	   was out of breath (then the stamina step), so it read whatever the
+	   stack held; the fighter's own record is what was meant. */
+	if (group == 0 && party_records[unit].skills[20] > 0) {
+		i = party_records[unit].skills[20] / 10 + 2;
 		if (fighter->speed_mod < i)
 			fighter->speed_mod++;
 	}

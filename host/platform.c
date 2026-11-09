@@ -9,7 +9,8 @@
    Environment:
      DS_GAME_DIR   where the data files are (default: the executable's dir)
      DS_ASPECT=0   square pixels, integer scaling (default: 4:3, as on a CRT)
-     DS_SHOT=f.bmp[,secs]  save the screen after secs (default 3), then quit
+     DS_SHOT=f.bmp[,secs...]  save the screen after secs (default 3), then
+                   quit; with several times, f-SECS.bmp at each
      DS_SELFTEST=1 exercise the platform (selftest.c) instead of the game
      DS_KEYS=secs:keys[;secs:keys...]  type keys at those times; keys are
                    characters, SDL key names in braces ({Escape}
@@ -315,20 +316,27 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    /* DS_SHOT=file.bmp[,seconds]: save a frame that long after startup
-       (default 3 s), then quit. */
+    /* DS_SHOT=file.bmp[,seconds...]: save a frame that long after startup
+       (default 3 s), then quit.  With several times, file-SECS.bmp at
+       each. */
     char shot_path[512] = "";
-    uint64_t shot_at = 0;
+    double shot_secs[32];
+    int shots = 0, shot_next = 0;
+    uint64_t start = SDL_GetTicksNS();
     const char *shot = SDL_getenv("DS_SHOT");
     if (shot && *shot) {
         snprintf(shot_path, sizeof shot_path, "%s", shot);
-        char *comma = strchr(shot_path, ',');
-        double secs = 3;
-        if (comma) {
-            *comma = 0;
-            secs = atof(comma + 1);
+        char *p = strchr(shot_path, ',');
+        if (p)
+            *p++ = 0;
+        while (p && *p && shots < 32) {
+            shot_secs[shots++] = atof(p);
+            p = strchr(p, ',');
+            if (p)
+                p++;
         }
-        shot_at = SDL_GetTicksNS() + (uint64_t)(secs * 1e9);
+        if (!shots)
+            shot_secs[shots++] = 3;
     }
 
     const char *keys = SDL_getenv("DS_KEYS");
@@ -344,9 +352,17 @@ int main(int argc, char **argv)
         take_warp();
         type_scripted();
         draw_frame();
-        if (shot_at && SDL_GetTicksNS() >= shot_at) {
-            save_shot(shot_path);
-            platform_shutdown(0);
+        if (shot_next < shots && SDL_GetTicksNS() - start >= (uint64_t)(shot_secs[shot_next] * 1e9)) {
+            char name[600];
+            const char *dot = strrchr(shot_path, '.');
+            if (shots == 1 || !dot)
+                snprintf(name, sizeof name, "%s", shot_path);
+            else
+                snprintf(name, sizeof name, "%.*s-%g%s", (int)(dot - shot_path), shot_path,
+                         shot_secs[shot_next], dot);
+            save_shot(name);
+            if (++shot_next == shots)
+                platform_shutdown(0);
         }
         /* With vsync, present waited for the display; without it, keep to
            60 Hz, still taking events as they come. */

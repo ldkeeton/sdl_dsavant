@@ -318,15 +318,19 @@ already there. Objects go under `build_out/<target>/obj/`.
    creation up to the race list. Load Savegame reaches the manual-word
    check. `DS_KEYS` types keys and clicks at set times for tests like
    these.
-5. **First run:** intro → main menu → load or create a party → maze → combat.
-   Fix whatever the 64-bit host exposes: pointer truncation, global order,
-   uninitialized reads.
+5. **First run** (in progress): a saved game loads into the maze; walking,
+   swimming, area messages and combat work on Linux. Fixed: structs are
+   packed to 1 (`host16.h`; Aztec added no padding, and the savegame's
+   `load_state` was 2 bytes off, so the party came back empty), checked
+   against the DOS offsets by `tools/check_structs.py`; each
+   `*/data/globals.c` is laid out as ln did, last declared first and
+   byte-packed (`dos_commons` in build.py; confirmed against VMAZE.OVR's
+   render-queue addresses); `tick_combatant` read an unset local as a party
+   index (now the fighter's own). `DS_SHOT` takes several times.
 6. **Sound:** port PLAY, vendor ymfm, samples.
 7. **Windows:** `TARGET=win` build, smoke test under Wine, then a run on real
    Windows.
-8. **Cleanup:** update `readme.md`, and add a struct-offset
-   check that compares `offsetof` with the `/* +0x.. */` comments in
-   `include/structs`.
+8. **Cleanup:** update `readme.md`.
 
 ## Known risks
 
@@ -334,8 +338,11 @@ already there. Objects go under `build_out/<target>/obj/`.
   pointers as `long`. These get native C replacements with pointer types, and
   each other case is found by compiler errors.
 - Code that relies on memory layout ("a loop runs from one array into the
-  next"): global order is kept with `-fno-toplevel-reorder`. Padding may still
-  differ; check with the address map.
+  next"): each `*/data/globals.c` is laid out as Aztec's ln did (reversed,
+  byte-packed; `dos_commons` in build.py), and structs are packed
+  (`#pragma pack(1)` in host16.h, checked by `tools/check_structs.py`).
+  Other initialized data keeps its order (`-fno-toplevel-reorder`), but gcc
+  may pad between globals; check with the address map.
 - Implicit-`int` callers of functions that return pointers: they truncate on
   64-bit. Found through `-Wint-conversion`; fixed by adding the `extern`
   declaration.

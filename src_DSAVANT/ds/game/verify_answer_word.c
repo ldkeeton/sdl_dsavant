@@ -10,9 +10,10 @@ verify_answer_word()
 	int i;
 
 	for (i = 0; i < answer_length; i++) {
+		/*  defeat copy protection
 		if ((char)((answer_word[i] * 37 + i * 17) % 255)
 		    != code_table[26 + i])
-			return 0;
+			return 0;*/
 		if (i == answer_length - 1)
 			npc_id_answer_relay = npc_id_clue_relay;
 	}
