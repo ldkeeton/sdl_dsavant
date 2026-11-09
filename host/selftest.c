@@ -84,7 +84,7 @@ void host_selftest(void)
     fprintf(stderr, "buttons: %d\n", mouse_reset());
     mouse_set_range_x(0, 639);
     mouse_set_range_y(0, 199);
-    mouse_set_pos(320, 100);
+    mouse_move_to(320, 100);
     mouse_pointer_image(arrow, 8, 8, 8);
     mouse_pointer_show(1);
     mouse_set_handler(0x0b, on_mouse);

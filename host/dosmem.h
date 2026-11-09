@@ -16,7 +16,7 @@
 #ifndef DOSMEM_H
 #define DOSMEM_H
 
-#include <stdint.h>
+#include "hoststd.h"
 
 #define DOS_MEM_SIZE    0x110000
 #define DOS_ARENA_FIRST 0x1800      /* first paragraph DOS can hand out */
@@ -56,6 +56,9 @@ int32_t dos_resize(uint16_t seg, uint16_t paras, uint16_t *largest);
 #define EMS_PAGES       24          /* 384 KB */
 
 extern uint8_t ems_mem[EMS_PAGES * EMS_PAGE_SIZE];
+
+/* int 67h/41h: the page frame's segment (four 16 KB pages). */
+#define EMS_FRAME_SEGMENT 0xE000
 
 /* int 67h/42h: total and free pages. */
 void ems_page_counts(uint16_t *total, uint16_t *free_pages);

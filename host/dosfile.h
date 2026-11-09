@@ -9,7 +9,7 @@
 #ifndef DOSFILE_H
 #define DOSFILE_H
 
-#include <stdint.h>
+#include "hoststd.h"
 
 /* Set the game directory (platform startup); 0 means the current one. */
 void dosfile_init(const char *dir);

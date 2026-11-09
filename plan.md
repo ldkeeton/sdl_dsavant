@@ -225,6 +225,7 @@ host/                    native C, not rewritten
   stubs.c/.h             reports stubbed symbols (until every .s is replaced)
   platform.c/.h          SDL window, presenter, event loop, game thread, main()
   bios.c/.h              tick counter, key buffer, int 33h mouse, VGA DAC
+  hoststd.h              <stddef.h>/<stdint.h> for game C, errno kept Aztec's
   dosmem.c/.h            the emulated 1 MB address space, DOS blocks, EMS
   dosfile.c/.h           DOS-style file API over the host filesystem
   selftest.c             DS_SELFTEST=1: exercises the platform without the game
@@ -270,12 +271,29 @@ already there. Objects go under `build_out/<target>/obj/`.
    Debug aids: F12 saves `shotNNN.bmp`, `DS_SHOT=file.bmp,secs` saves a
    frame and quits, `DS_SELFTEST=1` runs a platform test in place of the
    game; it passes on Linux and under Wine.
-3. **Runtime and DS library:** `aztec_*`, overlay loader (data reset + ovmain table), keyboard
-   queue (`get_filtered_key`/`poll_filtered_key`), fonts
-   (`load_font_file`, `get_font_glyph`, `draw_font_glyph`,
-   `measure_text_width`, `read_font_glyph`), RNG, bitfields,
-   `unpack_record`/tree decoder, `init_system_hardware`, the `call_*` thunks.
-4. **VGA driver:** memory and slot management (pictures, mazes, screens,
+3. **Runtime and DS library** (done): the Aztec runtime is C over the
+   host (`aztec_io.c`, `aztec_impl_sys.c` and `aztec_isatty.c` over
+   `dosfile.h`; the string and memory routines; `malloc` is the host's,
+   because Aztec's free list kept pointers in 16-bit words; `format` is a
+   printf engine over a `va_list`, and `sprintf` is variadic). The
+   compiler-support asm (`csav`, `lsubs`, `cswt`, `begin`, `ovbgn` …) is
+   gone. The DS library (keyboard queue, delays, RNG, bit helpers, fonts,
+   `unpack_record`, `init_system_hardware` and its detectors, the
+   driver-block and EMS bookkeeping) is C, with its shared state in
+   `include/dshw.h`. Fixed in the game C: four more hard-coded addresses
+   (`message_block_buffer` + 1024, `&party_records[pc].hand_attack[hand]`,
+   `party_records[pc].spell_bitmap`, `party_region.state[current_level]`,
+   the last one confirmed from the `[8D12h]` loads in VTREA.OVR). The host's
+   `mouse_set_pos` is now `mouse_move_to` (the game has its own), and
+   `host/hoststd.h` keeps mingw's `errno` macro out of game C. Both targets
+   now get through `init_system_hardware` and stop at the first video
+   driver stub (`call_get_free_space` returns 0, so VINIT exits with status
+   4). The 50 stubs left are all driver-side; they move to phase 4.
+4. **VGA driver:** the `call_*` thunks, with each driver entry's real
+   parameters; `load_video_driver`/`load_play_driver` (driver_names,
+   drv_slots_video, drv_block_table_dest), which copy the block table, the
+   palette and delay hooks and the EMS state into the driver's globals;
+   then memory and slot management (pictures, mazes, screens,
    sounds, scores, EMS caching, compaction), the blits (`show_area`,
    `fill_area`, `save_area`/`restore_area`, `cache_area`,
    `load_screen`/`save_screen`/`restore_screen`), `draw_glyph`, `draw_text`

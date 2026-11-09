@@ -298,7 +298,7 @@ uint16_t mouse_get(uint16_t *x, uint16_t *y)
     return b;
 }
 
-void mouse_set_pos(uint16_t x, uint16_t y)
+void mouse_move_to(uint16_t x, uint16_t y)
 {
     SDL_LockMutex(lock);
     mouse.x = clamp16(x, mouse.min_x, mouse.max_x);

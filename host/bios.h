@@ -6,7 +6,7 @@
 #ifndef BIOS_H
 #define BIOS_H
 
-#include <stdint.h>
+#include "hoststd.h"
 #include "dosmem.h"
 
 /* ---- timer ------------------------------------------------------------------
@@ -42,7 +42,7 @@ uint16_t mouse_reset(void);
 /* Fn 3: buttons; position in *x, *y. */
 uint16_t mouse_get(uint16_t *x, uint16_t *y);
 /* Fn 4: move the pointer (the host cursor follows). */
-void mouse_set_pos(uint16_t x, uint16_t y);
+void mouse_move_to(uint16_t x, uint16_t y);
 /* Fn 7 / 8: the range the position is clamped to. */
 void mouse_set_range_x(uint16_t min, uint16_t max);
 void mouse_set_range_y(uint16_t min, uint16_t max);

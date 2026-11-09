@@ -235,7 +235,7 @@ def proto_text(protos, statics, decls, notes):
             params = '()'
         if name in decls and decls[name] != ret:
             if ('*' in decls[name]) != ('*' in ret):
-                notes.append('%s returns %s but is declared %s' % (name, ret, decls[name]))
+                notes.append((name, ret, decls[name]))
             ret = decls[name]
         decl = '%s %s%s' % (ret, name, params)
         for m in re.finditer(r'\b(struct|union)\s+([A-Za-z_]\w*)', decl):
@@ -245,13 +245,14 @@ def proto_text(protos, statics, decls, notes):
     return '/* prototypes of the game C */\n' + head + ''.join(lines)
 
 
-def compile_game(t, g, protos, force):
-    """Prepend the prototypes and compile.  Returns (error text or None)."""
+def compile_game(t, g, protos, force, notes):
+    """Prepend the prototypes and compile.  Returns (error text or None).
+    Adds (function, defined type, declared type, file) to notes for each
+    pointer/integer mismatch in a return type."""
     d = load_defs(g)
-    notes = []
-    text = proto_text(protos, set(d['statics']), d.get('decls', {}), notes)
-    for n in notes:
-        print('note: %s: %s' % (g.src, n))
+    mine = []
+    text = proto_text(protos, set(d['statics']), d.get('decls', {}), mine)
+    notes.extend(n + (g.src,) for n in mine)
     full = os.path.join(ROOT, g.full)
     body = open(os.path.join(ROOT, g.rw), encoding='latin-1').read()
     changed = write_if_changed(full, text + body)
@@ -394,10 +395,18 @@ def main():
     work = [(s, g) for g, sources in groups.items() for s in sources]
     errors = []
     with ThreadPoolExecutor(jobs) as pool:
-        results = pool.map(lambda sg: compile_game(target, files[sg[0]], protos[sg[1]], force), work)
+        notes = []
+        results = pool.map(lambda sg: compile_game(target, files[sg[0]], protos[sg[1]], force,
+                                                   notes), work)
         for (s, g), err in zip(work, results):
             if err:
                 errors.append((s, err))
+    by_fn = {}
+    for name, ret, decl, src in notes:
+        by_fn.setdefault((name, ret, decl), []).append(src)
+    for (name, ret, decl), srcs in sorted(by_fn.items()):
+        print('note: %s returns %s; declared %s in %s' % (
+            name, ret, decl, srcs[0] if len(srcs) == 1 else '%d files' % len(srcs)))
     hosts = host_files()
     host_objs = []
     with ThreadPoolExecutor(jobs) as pool:

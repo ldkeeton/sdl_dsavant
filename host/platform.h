@@ -28,7 +28,7 @@ struct pointer_state {
 };
 int bios_pointer(struct pointer_state *p);
 
-/* A warp the game asked for (mouse_set_pos), in screen pixels: taken by
+/* A warp the game asked for (mouse_move_to), in screen pixels: taken by
    the SDL thread, which moves the host cursor.  Returns 0 if none. */
 int bios_take_warp(float *x, float *y);
 

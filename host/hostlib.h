@@ -5,7 +5,7 @@
 #ifndef HOSTLIB_H
 #define HOSTLIB_H
 
-#include <stddef.h>
+#include "hoststd.h"
 
 void *host_calloc(size_t size);
 void host_free(void *p);
