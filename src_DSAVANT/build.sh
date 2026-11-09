@@ -81,9 +81,6 @@ BINARIES=(
     # Main program: Aztec C runtime, game loop, overlay manager, and driver
     # thunks shared by all overlays
     'ds DS.EXE DS.EXE - -R +C af00 +D 2100'
-    # EGA video driver: planar graphics primitives, text, palette, mouse
-    # pointer, EMS/memory caching, and music slots
-    'ega EGA.DRV EGA.COM -'
     # Sound driver: OPL (AdLib) and MPU-401 music player, digitized sample
     # playback on the timer interrupt
     'play PLAY.DRV PLAY.COM -'
@@ -99,9 +96,6 @@ BINARIES=(
     # Startup overlay: loads fonts, palette, startup maze/misc files and
     # initializes runtime resources
     'vinit VINIT.OVR VINIT.OVR ds'
-    # Installer and setup utility: configures hardware drivers and copies game
-    # files
-    'vinstall VINSTALL.EXE VINSTALL.EXE -'
     # Maze overlay: level loading, 3D view rendering, movement, region events,
     # maze sounds, and roaming NPC turns
     'vmaze VMAZE.OVR VMAZE.OVR ds'
@@ -136,7 +130,6 @@ BINARIES=(
 )
 # The module that must open a binary.
 declare -A FIRST=(
-    [ega]='shared/drv/driver_dispatch'
     [play]='play/driver_dispatch'
     [vga]='shared/drv/driver_dispatch'
 )
@@ -146,7 +139,6 @@ declare -A ENTRY=(
     [vbase]='shared/ovr/aztec_ovbgn'
     [vdopt]='shared/ovr/aztec_ovbgn'
     [vinit]='shared/ovr/aztec_ovbgn'
-    [vinstall]='shared/aztec/aztec_begin'
     [vmaze]='shared/ovr/aztec_ovbgn'
     [vmele]='shared/ovr/aztec_ovbgn'
     [vmexe]='shared/ovr/aztec_ovbgn'
@@ -161,7 +153,6 @@ declare -A ENTRY=(
 # C flags other than CFLAGS: a binary's default, and one module's
 # (OBJ_CFLAGS beats BIN_CFLAGS).
 declare -A BIN_CFLAGS=(
-    [vinstall]='-n'
 )
 declare -A OBJ_CFLAGS=(
     [ds/aztec/aztec_ovloader]='-n'
@@ -201,7 +192,6 @@ declare -A OBJ_CFLAGS=(
     [shared/ovr/aztec_ovbgn]='-n'
     [shared/ovr/aztec_cswt]='-n'
     [shared/aztec/aztec_strcmp]='-n'
-    [vinstall/data/install_tables]='-n -Z4000'
     [shared/ovr/aztec_swapmem]='-n'
     [shared/aztec/aztec_strncpy]='-n'
 )

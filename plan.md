@@ -12,12 +12,10 @@ where it cannot work on a 64-bit host.
 | `shared/` | 123 C, 93 asm | Aztec C runtime (asm + C), the shared video-driver code (`shared/drv`), shared overlay C (`shared/ovr`) |
 | 15 overlays (`vbase` … `vtrea`) | ~700 C, 0 asm | game logic, loaded one at a time over a fixed memory region |
 | `vga/` | 24 asm | VGA-specific driver primitives (mouse pointer, palette, fades, dissolve) |
-| `ega/` | 50 asm | EGA driver |
 | `play/` | 56 asm | sound driver: OPL (AdLib) / MPU-401 music, digitized samples on the PIT |
-| `vinstall/` | 63 C, 28 asm | DOS installer and hardware setup |
 
 How the parts call each other: game C calls `call_*` thunks, which far-call
-fixed slots in the loaded `VGA.DRV`/`EGA.DRV`. The driver owns all memory for
+fixed slots in the loaded `VGA.DRV`. The driver owns all memory for
 pictures, mazes, screens and sounds. Those memory blocks are addressed by
 paragraph, both in a 268 KB "MAZE" area and in EMS. The game gets them back
 only as opaque 32-bit handles (`long saved_area`, `screen_cache[]`), which it
@@ -153,10 +151,6 @@ text-mode CR/LF is left as is (the game uses binary I/O).
 
 ## Scope questions (default in **bold**)
 
-- **EGA driver (`ega/`) and installer (`vinstall/`): not in the host build**,
-  and their `.s` files stay as they are. On the host they have nothing to do:
-  VGA is always present, and no installation is needed. Converting them would
-  be dead code. Say if you want them converted anyway.
 - **DOS build:** the `.s` files are deleted as their C replacements land (as
   asked), so `build.sh` stops working for DS/VGA/PLAY. Git history keeps the
   DOS version. Keeping both buildable would mean leaving each `.s` beside its
