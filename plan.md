@@ -234,6 +234,12 @@ host/                    native C, not rewritten
   overlay.c              overlay data snapshot/reset, the ovmain table
 third_party/ymfm/        vendored ymfm (BSD-3), only the OPL files
 src_DSAVANT/             game source; each .s is replaced by a .c in place
+  include/dshw.h         DS's hardware state: driver blocks, fonts, EMS, mouse
+  include/drv.h          the video driver's state, under its old names
+  shared/drv/drv_*.c     the driver: memory and slots, loading, caching,
+                         drawing, draw_text, mouse, sound and score calls
+  vga/vga_*.c            the VGA side: show_area, palette and fades, pointer
+  ds/library/call_thunks.c  call_* as plain calls into the drivers
 apps/DSAVANT/            original game data (unchanged)
 ```
 
@@ -289,17 +295,29 @@ already there. Objects go under `build_out/<target>/obj/`.
    now get through `init_system_hardware` and stop at the first video
    driver stub (`call_get_free_space` returns 0, so VINIT exits with status
    4). The 50 stubs left are all driver-side; they move to phase 4.
-4. **VGA driver:** the `call_*` thunks, with each driver entry's real
-   parameters; `load_video_driver`/`load_play_driver` (driver_names,
-   drv_slots_video, drv_block_table_dest), which copy the block table, the
-   palette and delay hooks and the EMS state into the driver's globals;
-   then memory and slot management (pictures, mazes, screens,
-   sounds, scores, EMS caching, compaction), the blits (`show_area`,
-   `fill_area`, `save_area`/`restore_area`, `cache_area`,
-   `load_screen`/`save_screen`/`restore_screen`), `draw_glyph`, `draw_text`
-   with `render_text_glyph_by_mode`, `draw_maze_piece`, palette
-   (`set_rgb`/`get_rgb`/`fade_*`/`reset_rgb`/`set_palette`), `dissolve_area`,
-   mouse.
+4. **VGA driver** (done): shared/drv and vga/ are C (`drv_*.c`,
+   `vga_*.c`, state in `include/drv.h`). The driver reads DS's block table,
+   palette and EMS state directly (`maze_mem_seg` is `maze_area_seg`, and so
+   on), so `load_video_driver`/`load_play_driver` are empty: the build does
+   not ship the .DRV files. The `call_*` thunks are plain calls
+   (`call_thunks.c`); `call_restore_screen` splits cache_area's handle back
+   into slot and mode. Kept as on DOS: 16-bit offsets into the screen
+   buffer, the slot/block numbering and compaction, the fatal messages.
+   EMS is addressed flat (`EMS_PTR`), so page mapping is gone. The pointer
+   is the host's: `mouse_event_handler` only records clicks, and show_area
+   no longer takes the pointer off and puts it back. A DAC load waits 24 ms,
+   the time DOS took feeding it a byte a scan line, so fades keep their
+   speed. The PLAY entries (`play_select_device`, `music_*`,
+   `wait_for_music`) are the 7 stubs left. Fixed in the game C:
+   `select_character_portrait` takes save_area's handle as one `long` (DOS
+   passed it as two words), `pick_up_inventory_entry` keeps it as a `long`
+   and reaches the pixels through `DOS_PTR`, and `run_character_menu` ends
+   its option list itself (on DOS the -1 was the next local on the stack;
+   under Windows a garbage row appeared). Checked on Linux and under Wine:
+   the intro, the title, the main menu, the character menu and character
+   creation up to the race list. Load Savegame reaches the manual-word
+   check. `DS_KEYS` types keys and clicks at set times for tests like
+   these.
 5. **First run:** intro → main menu → load or create a party → maze → combat.
    Fix whatever the 64-bit host exposes: pointer truncation, global order,
    uninitialized reads.

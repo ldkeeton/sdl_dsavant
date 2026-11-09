@@ -1,6 +1,7 @@
 /* Pick up an inventory entry: the mouse pointer becomes the item image, or
    the keyboard selection marks it. */
 #include "structs/pcrec.h"
+#include "dosmem.h"
 
 extern int selected_item_list_index;
 extern int selected_item_list_glyph;
@@ -10,7 +11,7 @@ extern int selected_item_type, selected_item_count;
 extern int mouse_active;
 extern char far *runtime_buffer_1k;
 extern int call_get_mouse(), call_set_mouse_pointer();
-extern char far *call_save_area();
+extern long call_save_area();
 extern int call_fill_area(), call_restore_area(), call_show_area();
 extern int draw_item_slot_label(), draw_font_glyph();
 extern int call_set_text_color(), call_set_text_pos();
@@ -27,8 +28,8 @@ char *label;
 	int cell_index;
 	int mouse_x, mouse_y;
 	int text_x, text_y;
-	char far *saved_area;
-	char far *saved_overlay;
+	long saved_area;
+	long saved_overlay;
 
 	selected_item_list_index = -1;
 	cell_index = entry_index >= 0 ? entry_index :
@@ -54,7 +55,9 @@ char *label;
 			draw_font_glyph(4, 0);
 			saved_overlay = call_save_area(text_x, text_y,
 				text_x + 75, text_y + 12);
-			app_memmove(saved_overlay + 12, runtime_buffer_1k, 988);
+			/* save_area returns a far pointer, seg:off */
+			app_memmove(DOS_PTR(saved_overlay >> 16, saved_overlay) + 12,
+				runtime_buffer_1k, 988);
 			call_restore_area(saved_overlay, 1);
 			call_restore_area(saved_area, 1);
 			call_get_mouse(&mouse_x, &mouse_y);

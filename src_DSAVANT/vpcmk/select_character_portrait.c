@@ -14,8 +14,10 @@ extern int call_show_area();
 extern int poll_hotspots();
 extern int flash_button();
 
-select_character_portrait(member_index, area_x, area_y)
-int member_index, area_x, area_y;
+/* area: the save_area of the portrait (on DOS, taken as two words). */
+select_character_portrait(member_index, area)
+int member_index;
+long area;
 {
 	int button;
 	long saved_area;
@@ -27,7 +29,7 @@ int member_index, area_x, area_y;
 	flush_keyboard();
 
 	for (;;) {
-		call_restore_area(area_x, area_y, 0);
+		call_restore_area(area, 0);
 		load_member_icon(party_records[member_index].portrait, 0);
 		draw_loaded_member_icon(member_index, 14, 18);
 		call_show_area(14, 18, 66, 74);

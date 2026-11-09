@@ -11,6 +11,10 @@
      DS_ASPECT=0   square pixels, integer scaling (default: 4:3, as on a CRT)
      DS_SHOT=f.bmp[,secs]  save the screen after secs (default 3), then quit
      DS_SELFTEST=1 exercise the platform (selftest.c) instead of the game
+     DS_KEYS=secs:keys[;secs:keys...]  type keys at those times; keys are
+                   characters, SDL key names in braces ({Escape}
+                   {Return} {Up} {F1} ...), or {click X Y}: a left click at
+                   screen pixel (X, Y)
    Keys: F12 saves the screen (shotNNN.bmp), Alt+Enter toggles fullscreen.
 */
 #include <stdio.h>
@@ -184,6 +188,80 @@ static void handle(SDL_Event *e)
     }
 }
 
+/* DS_KEYS: key presses typed at set times (a debugging aid, like DS_SHOT). */
+#define MAX_SCRIPTED 256
+static struct {
+    uint64_t at;
+    SDL_Scancode sc;        /* SDL_SCANCODE_UNKNOWN: a click at x, y */
+    SDL_Keymod mod;
+    int x, y;
+} scripted[MAX_SCRIPTED];
+static int scripted_count, scripted_next;
+
+static void script_keys(const char *spec, uint64_t start)
+{
+    char buf[1024];
+    snprintf(buf, sizeof buf, "%s", spec);
+    for (char *part = strtok(buf, ";"); part; part = strtok(0, ";")) {
+        char *colon = strchr(part, ':');
+        if (!colon)
+            continue;
+        uint64_t at = start + (uint64_t)(atof(part) * 1e9);
+        for (char *k = colon + 1; *k && scripted_count < MAX_SCRIPTED; k++, at += 100000000) {
+            SDL_Keymod mod = 0;
+            SDL_Scancode sc;
+            int x, y;
+            if (sscanf(k, "{click %d %d}", &x, &y) == 2) {
+                scripted[scripted_count].at = at;
+                scripted[scripted_count].sc = SDL_SCANCODE_UNKNOWN;
+                scripted[scripted_count].x = x;
+                scripted[scripted_count].y = y;
+                scripted_count++;
+                k = strchr(k, '}');
+                continue;
+            }
+            if (*k == '{' && strchr(k, '}')) {
+                char *end = strchr(k, '}');
+                *end = 0;
+                sc = SDL_GetScancodeFromName(k + 1);
+                k = end;
+            } else {
+                sc = SDL_GetScancodeFromKey((SDL_Keycode)(unsigned char)*k, &mod);
+            }
+            if (sc == SDL_SCANCODE_UNKNOWN) {
+                fprintf(stderr, "DS_KEYS: unknown key at \"%s\"\n", k);
+                continue;
+            }
+            scripted[scripted_count].at = at;
+            scripted[scripted_count].sc = sc;
+            scripted[scripted_count].mod = mod;
+            scripted_count++;
+        }
+    }
+}
+
+static void type_scripted(void)
+{
+    uint64_t now = SDL_GetTicksNS();
+    while (scripted_next < scripted_count && scripted[scripted_next].at <= now) {
+        if (scripted[scripted_next].sc == SDL_SCANCODE_UNKNOWN) {
+            bios_mouse_motion((float)scripted[scripted_next].x, (float)scripted[scripted_next].y);
+            bios_mouse_button(SDL_BUTTON_LEFT, 1);
+            bios_mouse_button(SDL_BUTTON_LEFT, 0);
+            scripted_next++;
+            continue;
+        }
+        SDL_KeyboardEvent e;
+        SDL_zero(e);
+        e.type = SDL_EVENT_KEY_DOWN;
+        e.down = true;
+        e.scancode = scripted[scripted_next].sc;
+        e.mod = scripted[scripted_next].mod;
+        bios_key_event(&e);
+        scripted_next++;
+    }
+}
+
 static void take_warp(void)
 {
     float x, y, wx, wy;
@@ -253,6 +331,10 @@ int main(int argc, char **argv)
         shot_at = SDL_GetTicksNS() + (uint64_t)(secs * 1e9);
     }
 
+    const char *keys = SDL_getenv("DS_KEYS");
+    if (keys && *keys)
+        script_keys(keys, SDL_GetTicksNS());
+
     const uint64_t frame = 1000000000ull / 60;
     uint64_t next = SDL_GetTicksNS();
     for (;;) {
@@ -260,6 +342,7 @@ int main(int argc, char **argv)
         while (SDL_PollEvent(&e))
             handle(&e);
         take_warp();
+        type_scripted();
         draw_frame();
         if (shot_at && SDL_GetTicksNS() >= shot_at) {
             save_shot(shot_path);

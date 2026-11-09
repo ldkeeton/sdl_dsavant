@@ -17,7 +17,7 @@ run_character_menu()
 {
 	int member_index, menu_action;
 	int menu_selection_state[6];
-	int menu_options[9];
+	int menu_options[9 + 1];
 	char message_text[40];
 
 	party_status_frame = 0;
@@ -33,7 +33,9 @@ run_character_menu()
 		/* Enable all nine menu rows before applying the party-state rules. */
 		for (member_index = 0; member_index < 9; member_index++)
 			menu_options[member_index] = 1;
-		menu_selection_state[0] = -1;
+		/* The list's end.  On DOS this was menu_selection_state[0], which lay
+		   just past menu_options on the stack. */
+		menu_options[9] = -1;
 		if (party_char_count < 1) {
 			menu_options[2] = 0;
 			menu_options[3] = 0;

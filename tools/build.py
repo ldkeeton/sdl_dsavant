@@ -50,7 +50,6 @@ UNCHECKED = {
     'display_member_message',   # update_party_status_animation passes 2 of 3
     'show_combat_action_text',  # run_combat_round passes 3 or 4 of 5
     'apply_spell_to_npc',       # called with an extra argument it ignores
-    'select_character_portrait',  # called with 2 of its 3
 }
 
 GAME_CFLAGS = [
