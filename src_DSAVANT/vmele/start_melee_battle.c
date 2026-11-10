@@ -3,6 +3,7 @@
 
 #include "structs/member.h"
 #include "structs/ovlitem.h"
+#include "structs/loadrec.h"
 #include "msg.h"
 
 extern int battle_setup_done, row_limit, loaded_score_num;
@@ -11,6 +12,7 @@ extern int show_melee_result;		/* nonzero unless the melee goes to VMNPC */
 extern int saved_screen_pending, saved_screen_slot;
 extern int party_return_state, monster_group_count, npc_melee;
 extern int game_state;
+extern struct load_header scenario_header;
 extern long screen_cache[];		/* cached full-screen far pointers */
 extern long saved_area_a, saved_area_b;
 extern long party_redraw_last_tick;
@@ -21,7 +23,8 @@ extern struct member_ext *battle_group_ext[];
 extern unsigned char picture_slot_number[], picture_slot_used[];
 extern struct overlay_list overlay_list;
 
-extern clamp_between(), call_is_music_playing(), free_loaded_score(),
+extern clamp_between(), call_is_music_playing(), call_stop_music(),
+	free_loaded_score(),
 	free_current_maze(), free_picture_slot(), load_sound_file(),
 	load_monster_picture(), restore_saved_screen(),
 	release_and_exit(), redraw_glyph_strip(), setup_melee_party(),
@@ -44,8 +47,11 @@ start_melee_battle()
 	row_limit = clamp_between(requested_row_limit, 0, 2);
 	e1_event_flag = 0;
 	if (loaded_score_num != -1) {	/* -1: no score loaded */
-		while (call_is_music_playing())
-			;
+		if (scenario_header.battle_auto_enabled == 1)
+			call_stop_music();
+		else
+			while (call_is_music_playing())
+				;
 		free_loaded_score(0);
 	}
 	free_current_maze();

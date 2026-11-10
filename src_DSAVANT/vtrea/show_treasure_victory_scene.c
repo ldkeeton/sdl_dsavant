@@ -1,6 +1,8 @@
 /* Show the victory message and distribute the treasure chest rewards. */
 #include "msg.h"
+#include "structs/loadrec.h"
 
+extern struct load_header scenario_header;
 extern char far *mouse_pointer_shape;
 extern int story_music_enabled, story_score_file_number, story_score_number;
 extern int story_score_volume, file_param_word;
@@ -35,7 +37,8 @@ show_treasure_victory_scene()
 	}
 	load_message_string(MSG_YOU_DEFEATED_THE_MONSTERS, message);
 	show_treasure_message(message, treasure_message_row, -1, 169);
-	if (story_music_enabled) {
+	/* Auto battle lets the victory score continue under the rewards. */
+	if (story_music_enabled && scenario_header.battle_auto_enabled != 1) {
 		while (call_is_music_playing())
 			;
 		delay_ms(400);
