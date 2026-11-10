@@ -1,5 +1,5 @@
 /* Wait for the requested ticks, while polling input and maze refreshes. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int flush_keyboard();
 extern int poll_fullscreen_hotspot();
 extern int advance_party_redraw_frame();

@@ -7,7 +7,7 @@ extern int actor_x, actor_y, trail_x;
 extern int scene_step_c, scene_step_d, scene_frame, scene_index;
 extern int scene_frame_delay_ticks;
 extern long party_redraw_last_tick;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int load_numbered_scene_picture(), draw_char_clipped_top_zero(),
 	free_scene_picture(), random_below(), draw_scene_frame(), call_reset_rgb(),
 	call_show_area(), call_fade_in(), play_scene_message_sequence(),

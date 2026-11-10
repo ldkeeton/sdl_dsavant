@@ -41,8 +41,8 @@ jobs:
 
       - name: Build Linux and Windows binaries
         run: |
-          ./build.sh
-          TARGET=win ./build.sh
+          RELEASE=1 ./build.sh
+          RELEASE=1 TARGET=win ./build.sh
 
       - name: Package release assets
         run: |

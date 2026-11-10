@@ -1,5 +1,5 @@
 /* Wait for a tick deadline while allowing user input to abort. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int space_key_hit;
 extern int flush_keyboard();
 extern int poll_fullscreen_hotspot();

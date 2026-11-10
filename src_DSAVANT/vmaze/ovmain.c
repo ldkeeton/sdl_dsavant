@@ -1,5 +1,5 @@
 /* Initialize the maze overlay and draw/cache the first-person view. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int capture_center_marker_mode, party_redraw_interval;
 extern long party_redraw_last_tick;
 extern int maze_sound_slot_e, maze_sound_slot_f, maze_sound_pair_state;

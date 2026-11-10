@@ -8,7 +8,7 @@ extern struct load_header scenario_header;
 extern int party_screen_animation_state;
 extern int pending_effect_sound;
 extern int effect_frame_phase;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_redraw_interval;
 extern int screen_cache_index;

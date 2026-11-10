@@ -2,7 +2,7 @@
 #include "structs/spell.h"
 
 extern struct spell_table_view spell_table;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int animation_index, show_area_bottom;
 extern long call_cache_area();
 extern int draw_animation_frame();

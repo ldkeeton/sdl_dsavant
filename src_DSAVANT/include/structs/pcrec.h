@@ -22,9 +22,8 @@ struct pc_hand_base {
 };
 
 /* set_party_hand_attack copies the item's eight hand_values over +0x04
- * through +0x0b (running past hand_values[5]), so critical_chance starts as
- * the item's hand_values[6].  No routine found reads +0x04..+0x09, +0x0b,
- * +0x0c or +0x10. */
+ * through +0x0b, so critical_chance starts as the item's hand_values[6].
+ * No routine found reads +0x04..+0x09, +0x0b, +0x0c or +0x10. */
 struct pc_hand_attack {
 	struct pc_hand_base base;	/* +0x00: four-byte base damage tuple */
 	unsigned char hand_values[6];	/* +0x04: item hand_values[0..5] */

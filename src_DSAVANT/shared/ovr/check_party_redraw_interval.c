@@ -1,6 +1,6 @@
 /* Check whether enough ticks have passed for a party redraw. */
 
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_redraw_interval;
 extern long party_redraw_current_tick, party_redraw_elapsed_ticks;

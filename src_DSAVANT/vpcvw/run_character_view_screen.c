@@ -10,7 +10,7 @@ extern unsigned char picture_slot_number[];
 extern int item_page_drawn, item_page_alt_mode, item_page;
 extern int party_slot_frame[];
 extern int party_redraw_interval;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_char_count, hotspot_hit, member_roster_index;
 extern int story_music_enabled, story_score_number, story_score_volume;

@@ -10,7 +10,7 @@ extern int hotspot_rects[];
 extern int dialog_selection, party_redraw_interval, dialog_button,
 	space_key_hit, hotspot_hit;
 extern long party_redraw_last_tick;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern struct spell_table_view spell_table;
 extern struct pc_rec party_records[];
 extern int known_spell_ids[];

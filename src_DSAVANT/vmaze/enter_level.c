@@ -5,7 +5,7 @@
 #include "structs/loadrec.h"
 extern struct load_header scenario_header;
 
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern struct maze_tables *maze_tables;
 extern struct saved_region_blocks party_region;
 extern struct floor_item *floor_items;

@@ -10,7 +10,7 @@ extern int npc_record_index;
 extern int npc_encounter_sound;
 extern int screen_cache_index, party_status_frame;
 extern int party_screen_animation_state;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int call_show_area(), load_message_string();
 extern int show_centered_npc_message();

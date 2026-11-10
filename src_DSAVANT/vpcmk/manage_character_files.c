@@ -19,7 +19,7 @@ extern int camp_score_number;
 extern int banner_offset, banner_plain_flag, banner_animation_frame;
 extern int party_slot_frame[];
 extern int party_redraw_interval;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int load_monster_picture();
 extern long call_cache_area();

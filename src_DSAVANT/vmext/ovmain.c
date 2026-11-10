@@ -1,6 +1,6 @@
 /* Initialize the main overlay state and dispatch pending party actions. */
 extern int capture_center_marker_mode, party_redraw_interval;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int marker_string_frames[];
 extern int saved_screen_pending, saved_screen_slot, game_state,

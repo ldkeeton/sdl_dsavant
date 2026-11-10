@@ -55,7 +55,7 @@ UNCHECKED = {
 }
 
 GAME_CFLAGS = [
-    '-std=gnu89', '-O0', '-g', '-fno-builtin', '-fno-common',
+    '-std=gnu89', '-O2', '-g', '-fno-builtin', '-fno-common',
     '-fno-toplevel-reorder', '-fwrapv', '-fno-strict-aliasing',
     # K&R code: these are how it was written, not bugs.
     '-Wno-implicit-int', '-Wno-return-type', '-Wno-builtin-declaration-mismatch',
@@ -88,6 +88,7 @@ class Target:
         if name == 'linux':
             self.cc, self.cxx = 'gcc', 'g++'
             self.ld, self.objcopy, self.nm = 'ld', 'objcopy', 'nm'
+            self.strip = 'strip'
             self.exe = 'DS'
             # Not PIE: overlay data stays in plain .data/.bss sections.
             self.cflags = ['-fno-pie']
@@ -96,6 +97,7 @@ class Target:
             pre = 'x86_64-w64-mingw32-'
             self.cc, self.cxx = pre + 'gcc', pre + 'g++'
             self.ld, self.objcopy, self.nm = pre + 'ld', pre + 'objcopy', pre + 'nm'
+            self.strip = pre + 'strip'
             self.exe = 'DS_WIN.exe'
             self.cflags = []
             prefix = os.environ.get('MINGW_SDL3_PREFIX', '/usr/local/x86_64-w64-mingw32')
@@ -385,12 +387,13 @@ def main():
     jobs = int(os.environ.get('JOBS') or os.cpu_count() or 4)
     stubs = os.environ.get('STUBS', '1') == '1'
     only_compile = os.environ.get('COMPILE_ONLY') == '1'
+    release = os.environ.get('RELEASE') == '1'
     os.makedirs(GAME_DATA, exist_ok=True)
     print('building %s' % target, flush=True)
-    build_target(Target(target), force, jobs, stubs, only_compile)
+    build_target(Target(target), force, jobs, stubs, only_compile, release)
 
 
-def build_target(target, force, jobs, stubs, only_compile):
+def build_target(target, force, jobs, stubs, only_compile, release):
     # Keep game files and saves in DSAVANT; rebuild intermediate files cleanly.
     if os.path.isdir(target.obj):
         shutil.rmtree(target.obj)
@@ -471,10 +474,10 @@ def build_target(target, force, jobs, stubs, only_compile):
     if only_compile:
         return
 
-    link(target, groups, files, host_objs, stubs, jobs)
+    link(target, groups, files, host_objs, stubs, jobs, release)
 
 
-def link(t, groups, files, host_objs, stubs, jobs):
+def link(t, groups, files, host_objs, stubs, jobs, release):
     obj = {s: files[s].o for s in files}
     all_objs = [obj[s] for s in files] + host_objs
     with ThreadPoolExecutor(jobs) as pool:
@@ -553,6 +556,10 @@ def link(t, groups, files, host_objs, stubs, jobs):
             die('stubs.c failed to compile')
     else:
         die('link failed after stubbing')
+    if release:
+        r = run([t.strip, '--strip-all', exe], cwd=ROOT)
+        if r.returncode:
+            die('could not strip %s: %s' % (exe, r.stderr.strip()))
     if stub_names:
         funcs = sorted(n for n, k in stub_names.items() if k == 'func')
         data = sorted(n for n, k in stub_names.items() if k == 'data')

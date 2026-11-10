@@ -14,7 +14,7 @@ extern int game_state;
 extern long screen_cache[];		/* cached full-screen far pointers */
 extern long saved_area_a, saved_area_b;
 extern long party_redraw_last_tick;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern struct member_rec *battle_groups[];	/* 0x1a4-byte member records */
 extern struct member_ext *battle_group_ext[];
 	/* 0xe8-byte extended member records */

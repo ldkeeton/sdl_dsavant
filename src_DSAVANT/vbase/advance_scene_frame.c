@@ -1,7 +1,7 @@
 /* Advance the scene frame when the configured tick delay has elapsed. */
 extern int scene_frame_delay_ticks, scene_frame;
 extern long party_redraw_last_tick;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 
 advance_scene_frame()
 {

@@ -7,7 +7,7 @@
 extern struct load_header scenario_header;
 extern struct member_rec *battle_groups[];
 extern struct spell_table_view spell_table;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int combat_effect_sound, pending_effect_sound;
 extern int cell_effect_frame[3][3], effect_frame_phase;
 extern int run_combat_screen_animation(), play_sound_effect();

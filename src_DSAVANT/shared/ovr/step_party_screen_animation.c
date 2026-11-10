@@ -3,7 +3,7 @@
 #include "structs/ovlitem.h"
 
 extern int party_screen_animation_state;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_redraw_interval;
 extern int screen_cache_index;

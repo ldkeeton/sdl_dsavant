@@ -1,7 +1,7 @@
 /* Wait for combat input or the requested tick deadline. */
 #include "structs/loadrec.h"
 extern struct load_header scenario_header;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int flush_keyboard();
 extern int poll_fullscreen_hotspot();
 extern int poll_filtered_key();

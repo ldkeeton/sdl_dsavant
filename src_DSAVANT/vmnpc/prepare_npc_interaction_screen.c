@@ -14,7 +14,7 @@ extern int party_screen_animation_state;
 extern int cell_slot_ref[3][3];
 extern int npc_cell_effect_frame[3][3];
 extern unsigned char picture_slot_number[], picture_slot_used[];
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_redraw_interval;
 extern long saved_area_a, saved_area_b;

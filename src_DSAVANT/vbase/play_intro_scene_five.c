@@ -5,7 +5,7 @@ extern int scene_cue_b, scene_frame, scene_index;
 extern int scroll_x[5], sprite_pos[2][8];
 extern int actor_x, actor_y, scene_clip_arg, scene_frame_delay_ticks;
 extern long party_redraw_last_tick;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int load_screen_file(), load_numbered_scene_picture(), random_below(),
 	draw_scene_frame(), call_reset_rgb(), call_show_area(), call_fade_in(),
 	play_scene_message_sequence(), free_scene_picture(), call_restore_screen(),

@@ -5,7 +5,7 @@ extern char scene_one_screen_filename[], scene_one_digit_cycle[],
 extern long scene_backdrop_ref, party_redraw_last_tick;
 extern int scene_cue_a, scene_cue_b, scene_cue_c, scene_cue_d;
 extern int scene_frame, scene_index, scene_step_a, scene_frame_delay_ticks;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int load_screen_file(), load_numbered_scene_picture();
 extern long call_cache_area();
 extern int aztec_strcpy(), draw_scene_frame(), call_reset_rgb();

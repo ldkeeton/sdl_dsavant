@@ -19,7 +19,11 @@ struct item_record *weapon;
 	do {
 		party_records[member_index].hand_attack[hand_index]
 			.hand_values[skill_work[0]] = weapon->hand_values[skill_work[0]];
-	} while (++skill_work[0] < 8);
+	} while (++skill_work[0] < 6);
+	party_records[member_index].hand_attack[hand_index].critical_chance =
+		weapon->hand_values[6];
+	party_records[member_index].hand_attack[hand_index].hand_value7 =
+		weapon->hand_values[7];
 
 	/* Skills add a fifth of skill 33 to critical chance. */
 	skill_work[0] = party_records[member_index].skills[33] / 5;

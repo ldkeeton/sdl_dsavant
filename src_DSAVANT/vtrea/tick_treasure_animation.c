@@ -1,5 +1,5 @@
 /* Advance the treasure screen animation after the redraw interval. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_redraw_interval;
 extern int screen_cache_index, party_status_frame, animation_frame;

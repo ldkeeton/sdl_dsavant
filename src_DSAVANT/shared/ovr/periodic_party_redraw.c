@@ -1,7 +1,7 @@
 /* Redraw the party marker and status row after the configured tick
    interval. */
 
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long party_redraw_last_tick;
 extern int party_redraw_interval;
 extern long party_redraw_current_tick, party_redraw_elapsed_ticks;

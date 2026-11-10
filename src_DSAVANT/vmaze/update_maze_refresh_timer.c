@@ -1,5 +1,5 @@
 /* Refresh the maze event deadline, or pause briefly while it is pending. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long maze_refresh_deadline;
 extern int maze_variant;
 extern int random_below();

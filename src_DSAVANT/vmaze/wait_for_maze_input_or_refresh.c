@@ -4,7 +4,7 @@ extern struct load_header scenario_header;
 extern int maze_message_state, escape_key_hit, object_search_active;
 extern int dissolve_or_show_area();
 extern int random_below();
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern long maze_refresh_deadline;
 extern int message_delay;
 extern int wait_ticks_or_key();

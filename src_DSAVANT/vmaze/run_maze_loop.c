@@ -43,7 +43,7 @@ extern int clear_marker_string_frames(), take_cell_exit_object();
 extern int check_cell_objects(), pick_party_member(), member_is_active();
 extern int select_cell_region_object(), play_sound_effect();
 extern unsigned char get_filtered_key();
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int floor_item_cell_bits[], current_map_block_a[],
 	maze_object_cell_bitmap[];
 extern int explored_cell_bitmap[];

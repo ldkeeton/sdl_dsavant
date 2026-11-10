@@ -13,7 +13,7 @@ extern int show_melee_result, npc_melee;
 extern int party_screen_animation_state;
 extern int screen_cache_index, party_status_frame;
 extern long party_redraw_last_tick;
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int cell_overlay_y_offset[][3];
 extern int cell_action_marks[][3];
 extern int action_overlay_steps[2][4];

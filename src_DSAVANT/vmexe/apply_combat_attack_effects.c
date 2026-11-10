@@ -43,7 +43,9 @@ int group, unit_index;
 	level_advantage = (attacker->level -
 		battle_groups[group]->unit[unit_index].level) * 3;
 	for (effect_index = 0; effect_index < 8; effect_index++) {
-		if (random_below(100) < attack->hand_values[effect_index]) {
+		int chance = effect_index < 6 ? attack->hand_values[effect_index] :
+			(effect_index == 6 ? attack->critical_chance : attack->hand_value7);
+		if (random_below(100) < chance) {
 			source_level = attacker->level / 3 + 1;
 			switch (effect_index) {
 			case 0:

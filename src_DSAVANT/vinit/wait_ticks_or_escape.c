@@ -1,5 +1,5 @@
 /* Wait until the tick deadline, polling Escape between short delays. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int poll_escape_key();
 extern int delay_ms();
 

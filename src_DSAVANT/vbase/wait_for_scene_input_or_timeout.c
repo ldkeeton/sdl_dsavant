@@ -1,5 +1,5 @@
 /* Wait for a scene input event or until the requested tick deadline. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern void flush_keyboard();
 extern int poll_fullscreen_hotspot();
 extern int refresh_scene_frame_if_active();

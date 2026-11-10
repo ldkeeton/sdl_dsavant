@@ -1,5 +1,5 @@
 /* Wait for input or a scene-message timeout, then clear the message area. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int scene_message_row;
 extern int dissolve_scene_message_area();
 extern int poll_fullscreen_hotspot();

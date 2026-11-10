@@ -1,5 +1,5 @@
 /* Wait for treasure input or the requested tick deadline. */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 extern int flush_keyboard();
 extern int poll_fullscreen_hotspot();
 extern int poll_filtered_key();

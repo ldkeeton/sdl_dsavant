@@ -1,6 +1,6 @@
 /* waits up to timeout_ticks timer ticks for a full-screen hotspot key,
    polling every 10 ms and returning as soon as one is hit */
-extern long far *tick_counter_ptr;
+extern volatile long far *tick_counter_ptr;
 
 wait_for_hotspot_timeout(timeout_ticks)
 int timeout_ticks;
