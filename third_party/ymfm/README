@@ -1,0 +1,4 @@
+ymfm, the Yamaha FM sound chip emulator by Aaron Giles (BSD-3, see LICENSE):
+https://github.com/aaronsgiles/ymfm at 81aec25ccbb98f4873a255f7551ac4dadac59b4a.
+Only the OPL files and what they need: DS uses its ym3812 (OPL2), through
+host/opl.cpp.  The files are unmodified.

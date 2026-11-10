@@ -19,7 +19,7 @@ char *msg;
 	int i, x, y, right, bottom, mouse_x, mouse_y, scroll_pos;
 	int row_height, mouse_row, selection, hit, repeat, poll_result;
 	int visible_rows, scroll_top, max_rows, unused[9];
-	char text[2];
+	char text[40];	/* complete button captions, including the terminator */
 	int save_id;
 
 	dialog_selection = -1;

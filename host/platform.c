@@ -28,6 +28,7 @@
 #include "dosmem.h"
 #include "overlay.h"
 #include "platform.h"
+#include "sound.h"
 
 extern short ds_main(void);
 void host_selftest(void);       /* selftest.c */
@@ -50,6 +51,7 @@ void platform_wake(void)
 
 static void platform_shutdown(int code)
 {
+    sound_shutdown();
     SDL_Quit();
     exit(code);
 }
@@ -310,6 +312,7 @@ int main(int argc, char **argv)
     const char *dir = SDL_getenv("DS_GAME_DIR");
     dosfile_init(dir ? dir : SDL_GetBasePath());
     bios_init();
+    sound_init();
 
     if (!SDL_CreateThread(game_thread, "game", 0)) {
         fprintf(stderr, "SDL_CreateThread: %s\n", SDL_GetError());

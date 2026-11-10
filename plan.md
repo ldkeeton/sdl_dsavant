@@ -16,7 +16,17 @@ Decided:
   removed.
 - **OPL emulator:** ymfm (BSD-3), vendored.
 
-## What exists today
+## Current status
+
+The native SDL3 port is playable on Linux, with music and sound effects
+confirmed by user testing. All assembly replacements are in C; the final
+56 PLAY assembly files have been removed, including their data tables.
+Both Linux and Windows builds link without stubs (`STUBS=0`), and Windows
+smoke and regression checks pass under Wine. Remaining work: test on real
+Windows, update `readme.md`, and continue broader gameplay testing. A full
+playthrough has not been verified.
+
+## Original DOS source inventory
 
 | Part | Files | Role |
 |---|---|---|
@@ -174,7 +184,7 @@ text-mode CR/LF is left as is (the game uses binary I/O).
 
 ### 8. Sound
 
-The whole music player is in `play/*.s`: it parses the score, handles tempo
+The original music player was in `play/*.s`: it parses the score, handles tempo
 and volume, and writes registers to the AdLib OPL2 chip at port 388h. The chip
 itself only synthesizes. Digitized samples are pushed out one byte per PIT
 tick by the CPU, to the PC speaker, a parallel-port DAC or the OPL.
@@ -229,7 +239,7 @@ host/                    native C, not rewritten
   dosmem.c/.h            the emulated 1 MB address space, DOS blocks, EMS
   dosfile.c/.h           DOS-style file API over the host filesystem
   selftest.c             DS_SELFTEST=1: exercises the platform without the game
-  audio.c                SDL audio stream, sample mixing
+  sound.c                SDL audio stream, PIT clock, sample mixing
   opl.cpp                C wrapper around ymfm
   overlay.c              overlay data snapshot/reset, the ovmain table
 third_party/ymfm/        vendored ymfm (BSD-3), only the OPL files
@@ -318,7 +328,7 @@ already there. Objects go under `build_out/<target>/obj/`.
    creation up to the race list. Load Savegame reaches the manual-word
    check. `DS_KEYS` types keys and clicks at set times for tests like
    these.
-5. **First run** (in progress): a saved game loads into the maze; walking,
+5. **First run** (done; broader gameplay testing continues): a saved game loads into the maze; walking,
    swimming, area messages and combat work on Linux. Fixed: structs are
    packed to 1 (`host16.h`; Aztec added no padding, and the savegame's
    `load_state` was 2 bytes off, so the party came back empty), checked
@@ -327,10 +337,75 @@ already there. Objects go under `build_out/<target>/obj/`.
    byte-packed (`dos_commons` in build.py; confirmed against VMAZE.OVR's
    render-queue addresses); `tick_combatant` read an unset local as a party
    index (now the fighter's own). `DS_SHOT` takes several times.
-6. **Sound:** port PLAY, vendor ymfm, samples.
-7. **Windows:** `TARGET=win` build, smoke test under Wine, then a run on real
-   Windows.
-8. **Cleanup:** update `readme.md`.
+   Chest loot fix: `item_or_loot_dialog` used a two-byte buffer for full
+   captions ("DIVVY LOOT", "TAKE", "LEAVE"), overwriting its stack. It now
+   has 40 bytes. `tools/check_loot_dialog.py [linux|win]` exercises every
+   loot/item-use button with 1..6 rows; it reproduces the pre-fix Linux
+   stack-smashing abort and passes after the fix.
+6. **Sound** (done; user confirmed music and sound effects). ymfm is vendored in
+   `third_party/ymfm/` (OPL, ADPCM and PCM files, unmodified). The active PLAY
+   paths are C in `play/play_{music,opl,sample,tables}.c`, with shared state
+   in `include/play.h`. `host/opl.cpp` wraps ymfm and `host/sound.c` drives
+   the PIT handlers through an SDL3 audio stream, mixing PCM with a DC
+   blocker. A silent clock thread keeps waits progressing without audio.
+   Both targets link with `STUBS=0`. `tools/check_sound.py [linux|win]`
+   checks events, voice allocation, OPL register values, fractional samples,
+   waits, ramps, looping and all six real scores (nonzero synthesized PCM
+   and stream completion); both pass, Windows under Wine. SDL dummy-audio
+   smoke tests pass on both; the unavailable-audio fallback passes on Linux.
+   All 397 struct layout checks still pass on both targets.
+   All 56 original PLAY assembly files, including `play/data/*.s`, have
+   been removed. Active routines and tables are consolidated into the four
+   C files above; obsolete hardware, dispatch and unreachable routines are
+   retired. The seven PLAY stubs are no longer needed.
+   Findings from the original assembly, retained for reference:
+   - Frames: argument i of a PLAY entry is at bp+8+2i. play_select_device
+     (a0..a6): sample segment = ((a0+a3)>>4)+a1-1000h, offset =
+     ((a2-a3)&~1)+10h, so it plays until the offset wraps to 0 (len = slot[1]);
+     step: fraction += 0FFh-a4 each tick (+1 byte per carry); a5 volume (0 =
+     stop sample *and* music, restore timer); a6 low byte flags (bit 0 wait
+     for the end, bit 1 skip if a sample is playing; 0FFh = set device, high
+     byte device; 4 becomes 1). The DAC port setup reads a4, not the port
+     (a5): an original bug, harmless (devices 2/3 are PCM here).
+   - The PIT check (pushf, bit 15) is 0 on a 286+, so play_sample_mode_flag
+     is 0: speaker_sample_interrupt, sample_fraction_interrupt/tick and the
+     tempo reprogramming in music_set_tempo_volume are dead. Also dead:
+     every rhythm/special_note branch (cmp then unconditional jmp),
+     loc_VKUV, opl_apply_volume, opl_load_operator_muted,
+     music_timer_interrupt_divided, int 13h. opl_pitch_range is never set
+     and no score has a 60h-6Fh pitch event (checked all six CSF files).
+   - Timing: the sample handler runs every 72 PIT clocks (16572 Hz, exactly
+     every 3 OPL samples at 49716 Hz, 24 PIT clocks each); tick_divider counts
+     those down and calls music_player_tick, which reloads it with the tempo.
+     Without a sample, the music handler runs at PIT divisor
+     (tempo & 0FFh) * 48h (8-bit mul). The audio callback emulates PIT ch0
+     and int 08h (divisor + handler pointer, under a recursive SDL mutex
+     standing in for cli), with ymfm generating one sample at a time. A
+     fallback thread runs the ticks if no audio device opens.
+   - Sound Blaster/AdLib samples (play_device 1) went through the OPL:
+     opl_silent_note_pulse keys ch 0 on, waits 2386 mode-3 counts (~1 ms, the
+     phase reaches its peak), sets fnum 0 with the key still on; then each
+     sample tick writes the curve (build_opl_sample_curve) to the latched
+     address (40h) with ramps in/out (play_device_timer_flag 0FFh/0/1).
+     The port keeps this through ymfm (advancing the chip ~1 ms in the
+     pulse), including the OPL address latch (opl_write leaves 40h, the
+     finish sets 3Fh). Devices 0/2/3 use the table level as PCM. A DC
+     blocker removes the unipolar output's offset.
+   - Player: events 00-0F note off, 10-1F note on (2 bytes: semitone-12 and
+     (v>>2)+60h unless play_device 5), 20-2F skip 2, 30-4F channel patch, 50-5F
+     skip 1, 60-6F pitch word, FE delay word (0: go on), FF or 70+ end (loop
+     if loop_at_end). Voices: 11 records of 5 bytes (vel, semitone, note
+     index, age word), 8 used, OPL channel = index+1. note_find_any jumps to
+     note_write_voice without setting opl_channel_index (keep). velocity*2+1
+     wraps in a byte in opl_write_operator_level (keep). opl_keys_off writes
+     B1h..B9h on devices 1/4. Patches: 40h-byte header (patch per note
+     index>>2), 11-byte records; scores are CSF + PBA (PBL for MPU, music
+     device 5: parse it, send nothing).
+7. **Windows** (build and Wine checks done; real Windows test pending):
+   `TARGET=win` builds without stubs; SDL smoke tests, sound checks and
+   treasure-dialog regressions pass under Wine. A run on real Windows is
+   still needed.
+8. **Cleanup** (PLAY assembly removal done): update `readme.md`.
 
 ## Known risks
 

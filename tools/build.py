@@ -516,7 +516,7 @@ def link(t, groups, files, host_objs, stubs, jobs):
         os.remove(stub_c)
     for attempt in range(3):
         extra = [stub_o] if stub_names else []
-        argv = [t.cc, '-g', '-o', exe] + objs + extra + t.sdl_libs
+        argv = [t.cxx, '-g', '-o', exe] + objs + extra + t.sdl_libs
         if t.name == 'linux':
             argv += ['-no-pie', '-lm', '-lstdc++', '-pthread']
         else:
