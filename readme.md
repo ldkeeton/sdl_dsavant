@@ -29,6 +29,18 @@ cd DSAVANT
 
 On Windows, launch `DS_WIN.exe` from the same folder.
 
+## Releases
+
+Pushing a tag beginning with `v` runs the GitHub Actions release build:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release contains the Linux `DS` binary and `DS_WIN.zip` with
+`DS_WIN.exe` and `SDL3.dll`. Original game data is not included.
+
 ## Controls
 
 - **Alt+Enter:** toggle fullscreen.

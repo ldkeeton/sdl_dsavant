@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 gcc g++ binutils pkg-config libsdl3-dev \
+            gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+            binutils-mingw-w64-x86-64 zip
+
+      - name: Install SDL3 for MinGW
+        run: |
+          version=3.4.18
+          archive="SDL3-devel-$version-mingw.tar.gz"
+          curl -fL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/libsdl-org/SDL/releases/download/release-$version/$archive"
+          printf '%s  %s\n' \
+            '049b9dd711e3fb3f8d84feb998dfec54a75e17cf539c4a80ff4d058d839771cf' \
+            "$RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" \
+            "SDL3-$version/x86_64-w64-mingw32"
+          echo "MINGW_SDL3_PREFIX=$RUNNER_TEMP/SDL3-$version/x86_64-w64-mingw32" >> "$GITHUB_ENV"
+
+      - name: Build Linux and Windows binaries
+        run: ./build.sh
+
+      - name: Package release assets
+        run: |
+          test -f DSAVANT/DS
+          test -f DSAVANT/DS_WIN.exe
+          test -f DSAVANT/SDL3.dll
+          mkdir -p dist
+          zip -j dist/DS_WIN.zip DSAVANT/DS_WIN.exe DSAVANT/SDL3.dll
+          unzip -l dist/DS_WIN.zip
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" DSAVANT/DS dist/DS_WIN.zip --clobber
+          else
+            gh release create "$tag" DSAVANT/DS dist/DS_WIN.zip \
+              --verify-tag --generate-notes --title "$tag"
+          fi
