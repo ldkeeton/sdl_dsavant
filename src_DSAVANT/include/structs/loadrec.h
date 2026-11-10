@@ -55,7 +55,7 @@ struct load_header {
 	unsigned char graphics_mode;      /* +0x348 */
 	unsigned char has_second_path;    /* +0x349: PATH_SECOND is set */
 	unsigned char no_dissolve;        /* +0x34a */
-	char unused_34b;
+	unsigned char battle_auto_enabled; /* +0x34b: 0 off, 1 on */
 };
 struct load_state {
 	int level; /* +0x00 */

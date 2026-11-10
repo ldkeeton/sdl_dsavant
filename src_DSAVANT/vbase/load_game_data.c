@@ -144,6 +144,8 @@ int load_mode;
 	scenario_header.graphics_mode = preserved_load_header.graphics_mode;
 	scenario_header.has_second_path = preserved_load_header.has_second_path;
 	scenario_header.no_dissolve = preserved_load_header.no_dissolve;
+	scenario_header.battle_auto_enabled =
+		preserved_load_header.battle_auto_enabled;
 	startup_option = scenario_header.combat_delay;
 	if ((byte_count = 6 * scenario_header.maze_change_count) > 0) {
 		/* six bytes per record */

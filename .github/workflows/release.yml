@@ -40,7 +40,9 @@ jobs:
           echo "MINGW_SDL3_PREFIX=$RUNNER_TEMP/SDL3-$version/x86_64-w64-mingw32" >> "$GITHUB_ENV"
 
       - name: Build Linux and Windows binaries
-        run: ./build.sh
+        run: |
+          ./build.sh
+          TARGET=win ./build.sh
 
       - name: Package release assets
         run: |

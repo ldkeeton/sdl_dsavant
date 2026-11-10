@@ -2,6 +2,8 @@
    queue cell overlays, then draw each overlay item. */
 
 #include "structs/ovlitem.h"
+#include "structs/loadrec.h"
+extern struct load_header scenario_header;
 
 extern int party_screen_animation_state;
 extern int pending_effect_sound;
@@ -37,7 +39,8 @@ step_combat_screen_animation()
 		call_show_area(72, 32, 247, 143);
 		if (pending_effect_sound != 0) {
 			play_sound_effect(5);
-			if (pending_effect_sound == 2)
+			if (scenario_header.battle_auto_enabled != 1 &&
+			    pending_effect_sound == 2)
 				call_wait_sound(1);
 		}
 		pending_effect_sound = 0;

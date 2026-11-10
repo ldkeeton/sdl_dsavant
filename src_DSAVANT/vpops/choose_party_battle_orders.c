@@ -1,11 +1,14 @@
 /* Build each party member's battle order and review or cancel the orders. */
 #include "structs/member.h"
 #include "structs/pcrec.h"
+#include "structs/loadrec.h"
 #include "msg.h"
 
 extern struct pc_rec party_records[];
+extern struct load_header scenario_header;
 extern struct member_rec *battle_groups[];
 extern int party_char_count, monster_group_count;
+extern int combat_auto_advance;
 extern int range_max_target_group[4];
 extern char unit_targeted[][9];
 extern int load_message_string(), random_below(), aztec_setmem();
@@ -45,6 +48,7 @@ choose_party_battle_orders()
 	int available_attacks;
 	int attack_range;
 	int active_party_count;
+	int quick_orders;
 	int party_order[6];
 	char versus_text[20];
 
@@ -90,6 +94,8 @@ choose_party_battle_orders()
 	/* Clear per-member target marks and gather the active party order. */
 	aztec_setmem(unit_targeted, 45, 0);
 	active_party_count = 0;
+	quick_orders = 0;
+	combat_auto_advance = 0;
 	flush_keyboard();
 	party_index = 0;
 	while (party_index < party_char_count) {
@@ -99,6 +105,10 @@ choose_party_battle_orders()
 			active_party_count++;
 			active_member = &battle_groups[0]->unit[party_index];
 			do {
+				/* AUTO attacks the nearest group rather than retaining a
+				   previous target that may now be out of range. */
+				if (quick_orders)
+					active_member->target_group = 1;
 				if (battle_groups[0]->unit[party_index].target_group < 1
 					|| battle_groups[0]->unit[party_index].target_group > monster_group_count)
 					battle_groups[0]->unit[party_index].target_group = 1;
@@ -162,7 +172,8 @@ choose_party_battle_orders()
 				if (battle_groups[0]->unit[party_index].target_group
 					> range_max_target_group[1])
 					action_options[5] = 0;
-				action_options[11] = -1;
+				action_options[11] = scenario_header.battle_auto_enabled == 1;
+				action_options[12] = -1;
 				selected_action = -1;
 				battle_groups[0]->unit[party_index].target_unit = 0;
 				/* Draw the current member and let the player choose an order. */
@@ -174,8 +185,11 @@ choose_party_battle_orders()
 				draw_centered_text_at_x(versus_text, 160, 154, 22);
 				retry_selection = 0;
 				reset_orders = 0;
-				menu_choice = select_party_menu_target(3000, 3, 9, 231, 166,
-					6, 42, 10, 3, 1, 1, action_options);
+				if (quick_orders)
+					menu_choice = action_options[0] ? 0 : 1;
+				else
+					menu_choice = select_party_menu_target(3000, 3, 9, 231, 166,
+						6, 42, 10, 3, 1, 1, action_options);
 				if (menu_choice < 0) {
 					/* A negative result picks monster group -result instead. */
 					retry_selection = 1;
@@ -207,12 +221,19 @@ choose_party_battle_orders()
 								hand_options[working_value] = 0;
 							if (hand_options[working_value] == 1) {
 								available_attacks++;
-								selected_action = working_value;
+								if (!quick_orders || selected_action == -1)
+									selected_action = working_value;
 							}
 						}
+						/* Reach attacks are the usable choice for a back-row fighter. */
+						if (quick_orders && hand_options[4] == 1 &&
+							party_records[party_index].hand_attack[0].range == 2 &&
+							(party_index >= 3 && active_member->phase != 1 ||
+							 active_member->target_group > range_max_target_group[0]))
+							selected_action = 4;
 						hand_options[8] = -1;
 					}
-					if (available_attacks > 1) {
+					if (available_attacks > 1 && !quick_orders) {
 						selected_action = select_party_menu_target(3050, 0, 9, 231,
 							166, 6, 42, 10, 3, 0, 27, hand_options);
 					}
@@ -222,18 +243,27 @@ choose_party_battle_orders()
 							attack_range = 0;
 						if (battle_groups[0]->unit[party_index].target_group
 							> range_max_target_group[attack_range]) {
-							play_sound_effect(0);
+							if (!quick_orders) play_sound_effect(0);
 							retry_selection = 1;
 						}
 						if (attack_range == 0 && party_index >= 3 &&
 							battle_groups[0]->unit[party_index].phase != 1) {
-							play_sound_effect(0);
+							if (!quick_orders) play_sound_effect(0);
 							retry_selection = 1;
 						}
 					} else
 						retry_selection = 1;
+					if (quick_orders && retry_selection) {
+						menu_choice = 1;
+						selected_action = 2; /* Guard. */
+						retry_selection = 0;
+					}
 					break;
 				case 1:
+					if (quick_orders) {
+						selected_action = 2; /* Guard. */
+						break;
+					}
 					/* Offer the alternate action only when the offhand item supports it. */
 					redraw_area_set(0);
 					draw_centered_text_at_x(party_records[party_index].name,
@@ -301,13 +331,23 @@ choose_party_battle_orders()
 					reset_orders = 1;
 					active_party_count = 0;
 					break;
+				case 11:
+					/* Restart with default orders for every active member. */
+					quick_orders = 1;
+					combat_auto_advance = 1;
+					aztec_setmem(unit_targeted, 45, 0);
+					party_index = -1;
+					active_party_count = 0;
+					reset_orders = 1;
+					break;
 				}
 			} while (retry_selection == 1);
 			/* Restore the order panel before committing the selected action. */
 			redraw_area_set(0);
 			draw_centered_text_at_x(versus_text, 160, 154, 22);
 			show_area_set(0);
-			delay_ms(50);
+			if (!quick_orders)
+				delay_ms(50);
 			if (!reset_orders) {
 				battle_groups[0]->unit[party_index].primary_action = selected_action;
 				battle_groups[0]->unit[party_index].secondary_action = -1;
@@ -356,6 +396,8 @@ choose_party_battle_orders()
 		}
 		party_index++;
 		if (party_index == party_char_count) {
+			if (quick_orders)
+				break;
 			/* Show the final-order prompt and handle its review or cancel choices. */
 			redraw_area_set(3);
 			load_message_string(MSG_FINAL_ORDERS, final_orders_text);

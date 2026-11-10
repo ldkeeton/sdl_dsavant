@@ -177,3 +177,6 @@ struct maze_cells *maze_data;
 struct maze_tables *maze_tables;
 struct maze_change *maze_change_log;
 struct floor_item *floor_items;
+
+/* SDL port control, appended to preserve the original data layout. */
+int combat_auto_advance;

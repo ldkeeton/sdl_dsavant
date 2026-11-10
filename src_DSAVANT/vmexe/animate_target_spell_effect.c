@@ -3,6 +3,8 @@
    the impact sound). */
 #include "structs/member.h"
 #include "structs/spell.h"
+#include "structs/loadrec.h"
+extern struct load_header scenario_header;
 extern struct member_rec *battle_groups[];
 extern struct spell_table_view spell_table;
 extern long far *tick_counter_ptr;
@@ -211,7 +213,8 @@ int target_unit, show_impact;
 		}
 		call_restore_screen(screen_cache, 1, 0);
 	}
-	call_wait_sound(1);
+	if (scenario_header.battle_auto_enabled != 1)
+		call_wait_sound(1);
 	if (show_impact != 0) {
 		if (animation_state == -1) {
 			pending_effect_sound = 2;

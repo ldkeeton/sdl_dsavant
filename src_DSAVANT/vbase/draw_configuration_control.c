@@ -107,5 +107,10 @@ int control_number, dialog_left, dialog_top;
 		call_set_text_pos(dialog_left + 233, dialog_top + 105);
 		draw_number_field(scenario_header.palette[PALETTE_SCALE], 3, 0);
 		break;
+	case 19:
+		/* The original header's spare byte defaults to disabled. */
+		draw_button(dialog_left + 260, dialog_top + 110, 3, 1, 1,
+			scenario_header.battle_auto_enabled == 1 ? "ON" : "OFF");
+		break;
 	}
 }

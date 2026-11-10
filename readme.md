@@ -8,23 +8,23 @@ creates that folder if needed and puts both executables and `SDL3.dll` there.
 
 ## Build
 
-Requires Python 3, GCC/G++ with C++17 support, GNU binutils, `pkg-config`,
-SDL3 development libraries, the MinGW-w64 GCC/G++ toolchain, and SDL3 for
-MinGW. SDL3 for MinGW is expected under `/usr/local/x86_64-w64-mingw32`; set
-`MINGW_SDL3_PREFIX` if installed elsewhere.
+The Linux build requires Python 3, GCC/G++ with C++17 support, GNU binutils,
+`pkg-config`, and SDL3 development libraries. The Windows build also requires
+MinGW-w64 GCC/G++ and SDL3 for MinGW. SDL3 for MinGW is expected under
+`/usr/local/x86_64-w64-mingw32`; set `MINGW_SDL3_PREFIX` if installed elsewhere.
 
-Build both Linux and Windows versions from the repository root:
+Build Linux from the repository root. Build Windows only when requested:
 
 ```sh
 ./build.sh
+TARGET=win ./build.sh
 ```
 
 Game files and saves in `DSAVANT` are preserved across builds. Launch the
-Linux build with:
+Linux build from the repository root with:
 
 ```sh
-cd DSAVANT
-./DS
+./run.sh
 ```
 
 On Windows, launch `DS_WIN.exe` from the same folder.
@@ -45,3 +45,9 @@ The release contains the Linux `DS` binary and `DS_WIN.zip` with
 
 - **Alt+Enter:** toggle fullscreen.
 - **F12:** save a screenshot.
+
+## Battle auto mode
+
+Turn on **BATTLE AUTO MODE** in Game Configuration to enable **AUTO** battle
+orders: Fight the nearest group when possible, otherwise Guard. It also
+speeds through the round.

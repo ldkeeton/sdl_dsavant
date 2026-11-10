@@ -4,6 +4,7 @@ extern int mouse_active, hotspot_hit, hotspot_rects[];
 extern int monster_group_count;
 extern int load_message_string(), draw_bevel_frame();
 extern int call_set_text_color(), aztec_strlen(), call_set_text_pos();
+extern char *aztec_strcpy();
 extern int draw_text_glyphs(), set_hotspot(), call_show_area();
 extern int show_area_set(), poll_hotspots(), step_party_screen_animation();
 extern int poll_filtered_key(), call_invert_area(), delay_ms();
@@ -36,8 +37,11 @@ int *option_flags;
 		if (option_flags[item_index] == 1) {
 			item_slot = monster_mode ? item_index : display_count;
 			column_x = item_slot < grid_width ? first_column_x : second_column_x;
-			load_message_string(first_message + item_index,
-				option_text[display_count]);
+			if (first_message == 3000 && item_index == 11)
+				aztec_strcpy(option_text[display_count], "AUTO");
+			else
+				load_message_string(first_message + item_index,
+					option_text[display_count]);
 			cell_x = item_slot % grid_width / rows * column_step;
 			cell_y = item_slot % grid_width % rows * row_step;
 			draw_bevel_frame(column_x + cell_x, top + cell_y,

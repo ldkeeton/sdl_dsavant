@@ -22,6 +22,7 @@ extern int step_volume_setting(), adjust_palette_base_setting();
 extern int adjust_palette_and_rgb_lookup(), aztec_strlen();
 extern int flash_button(), write_header_and_apply_devices();
 extern int restore_saved_screen();
+extern int call_set_text_color(), call_set_text_pos(), draw_text_glyphs();
 
 run_configuration_menu(initial_mode)
 int initial_mode;
@@ -107,6 +108,9 @@ int initial_mode;
 	draw_message_at_position(MSG_CONTRAST, dialog_top + 161,
 		dialog_left + 105, 1);
 	draw_setting_slider_markers(dialog_top + 221, dialog_left + 105, 36);
+	call_set_text_color(1, 194);
+	call_set_text_pos(dialog_top + 161, dialog_left + 114);
+	draw_text_glyphs("BATTLE AUTO MODE", 0);
 	draw_inset_panel(dialog_top + 169, dialog_left + 122,
 		dialog_top + 275, dialog_left + 140);
 	load_message_string(MSG_SAVE_2320, message_buffer);
@@ -117,6 +121,7 @@ int initial_mode;
 	/* Draw the numbered controls once before accepting input. */
 	for (number_remainder = 0; number_remainder < 17; ++number_remainder)
 		draw_configuration_control(number_remainder, dialog_top, dialog_left);
+	draw_configuration_control(19, dialog_top, dialog_left);
 
 	/* Register the screen controls and the save/cancel buttons. */
 	set_hotspot(0, dialog_top + 92, dialog_left + 25,
@@ -169,7 +174,9 @@ int initial_mode;
 		dialog_top + 220, dialog_left + 135, 0, 0);
 	set_hotspot(24, dialog_top + 230, dialog_left + 127,
 		dialog_top + 272, dialog_left + 135, 27, 0);
-	set_hotspot(25, -1, 0, 0, 0, 0, 0);
+	set_hotspot(25, dialog_top + 260, dialog_left + 110,
+		dialog_top + 278, dialog_left + 118, 0, 0);
+	set_hotspot(26, -1, 0, 0, 0, 0, 0);
 	call_show_area(dialog_top - 1, dialog_left - 1,
 		dialog_right + 1, dialog_bottom + 1);
 
@@ -189,7 +196,7 @@ int initial_mode;
 			case 9:
 				/* Arrow keys move the selection, skipping the noninteractive row. */
 				draw_configuration_control(selected_control, dialog_top, dialog_left);
-				selected_control = (selected_control + 18) % 19;
+				selected_control = (selected_control + 19) % 20;
 				if (selected_control == 14)
 					--selected_control;
 				call_show_area(dialog_top - 1, dialog_left - 1,
@@ -197,7 +204,7 @@ int initial_mode;
 				break;
 			case 11:
 				draw_configuration_control(selected_control, dialog_top, dialog_left);
-				selected_control = (selected_control + 1) % 19;
+				selected_control = (selected_control + 1) % 20;
 				if (selected_control == 14)
 					++selected_control;
 				call_show_area(dialog_top - 1, dialog_left - 1,
@@ -217,6 +224,7 @@ int initial_mode;
 				case 13: selected_hotspot = 18; break;
 				case 17: selected_hotspot = 23; break;
 				case 18: selected_hotspot = 24; break;
+				case 19: selected_hotspot = 25; break;
 				}
 				if (selected_hotspot != -1)
 					hotspot_hit = 1;
@@ -432,6 +440,11 @@ int initial_mode;
 				scenario_header = original_header;
 				adjust_palette_and_rgb_lookup(scenario_header.palette[PALETTE_BASE],
 					scenario_header.palette[PALETTE_SCALE]);
+				break;
+			case 25:
+				scenario_header.battle_auto_enabled =
+					scenario_header.battle_auto_enabled == 1 ? 0 : 1;
+				draw_configuration_control(19, dialog_top, dialog_left);
 				break;
 			}
 			if (menu_active != 0 && mouse_active == 0)

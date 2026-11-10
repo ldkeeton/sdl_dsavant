@@ -94,5 +94,8 @@ int control_number, dialog_left, dialog_top;
 	case 18:
 		refresh_configuration_button(dialog_left + 230, dialog_top + 127, 6);
 		break;
+	case 19:
+		refresh_configuration_button(dialog_left + 260, dialog_top + 110, 3);
+		break;
 	}
 }

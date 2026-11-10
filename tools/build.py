@@ -380,14 +380,14 @@ def closure(t, objs, library, syms):
 # ---- main --------------------------------------------------------------------
 
 def main():
+    target = os.environ.get('TARGET', 'linux')
     force = os.environ.get('FORCE') == '1'
     jobs = int(os.environ.get('JOBS') or os.cpu_count() or 4)
     stubs = os.environ.get('STUBS', '1') == '1'
     only_compile = os.environ.get('COMPILE_ONLY') == '1'
     os.makedirs(GAME_DATA, exist_ok=True)
-    for name in ('linux', 'win'):
-        print('building %s' % name, flush=True)
-        build_target(Target(name), force, jobs, stubs, only_compile)
+    print('building %s' % target, flush=True)
+    build_target(Target(target), force, jobs, stubs, only_compile)
 
 
 def build_target(target, force, jobs, stubs, only_compile):
