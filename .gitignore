@@ -1,4 +1,6 @@
-apps
+DSAVANT_/*
+DSAVANT/*
+!DSAVANT/readme.md
 build_out
 build_out_new
 __pycache__

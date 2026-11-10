@@ -11,11 +11,11 @@ import build
 
 def main():
     target = build.Target(sys.argv[1] if len(sys.argv) > 1 else 'linux')
-    env = dict(os.environ, TARGET=target.name, STUBS='0')
+    env = dict(os.environ, STUBS='0')
     subprocess.run([sys.executable, os.path.join(build.HERE, 'build.py')], env=env,
                    cwd=build.ROOT, check=True)
     obj = os.path.join(target.obj, 'test_sound.o')
-    exe = os.path.join(target.out, 'test_sound' + ('.exe' if target.name == 'win' else ''))
+    exe = os.path.join(target.obj, 'test_sound' + ('.exe' if target.name == 'win' else ''))
     subprocess.run([target.cc, '-std=gnu11', '-g', '-Wall', '-Ihost',
                     '-iquotesrc_DSAVANT/include', '-c', 'tools/test_sound.c', '-o', obj],
                    cwd=build.ROOT, check=True)
@@ -27,8 +27,8 @@ def main():
     command += [os.path.join(target.obj, src) for src in sources]
     command += ['-static-libgcc', '-static-libstdc++'] if target.name == 'win' else ['-no-pie']
     subprocess.run(command, cwd=build.ROOT, check=True)
-    command = ([exe, os.path.join(build.ROOT, 'apps/DSAVANT')] if target.name == 'linux'
-               else ['wine', exe, 'Z:' + os.path.join(build.ROOT, 'apps/DSAVANT')])
+    command = ([exe, build.GAME_DATA] if target.name == 'linux'
+               else ['wine', exe, 'Z:' + build.GAME_DATA])
     subprocess.run(command, cwd=build.ROOT, check=True)
 
 

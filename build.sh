@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Build the game for the host with SDL3.  Run from anywhere; paths are
+# Build Linux and Windows versions with SDL3. Run from anywhere; paths are
 # relative to this repository.
 #
-#   ./build.sh                  Linux build: build_out/linux/DS
-#   TARGET=win ./build.sh       Windows (mingw-w64): build_out/win/DS.exe
+#   ./build.sh                  DSAVANT/DS, DSAVANT/DS_WIN.exe, SDL3.dll
 #
-# Output goes to build_out/<target>/ with the original game's files copied
-# from apps/DSAVANT (files already there, such as saves, are kept).  Objects
-# and intermediate files are under build_out/<target>/obj/.
+# Executables and the Windows SDL runtime go into DSAVANT, which is created
+# if absent. Game files and saves there are preserved. Objects go to
+# build_out/<platform>_obj/ and are recreated on each build.
 #
 # Environment
-#   TARGET             linux (default) or win
 #   JOBS               parallel jobs (default: number of CPUs)
-#   FORCE=1            rebuild everything
+#   FORCE=1            accepted for compatibility; builds always start clean
 #   STUBS=0            no stubs for undefined symbols: the link fails instead
 #   COMPILE_ONLY=1     compile, do not link
 #   MINGW_SDL3_PREFIX  where the SDL3 mingw release is installed

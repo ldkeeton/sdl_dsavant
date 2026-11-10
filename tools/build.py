@@ -24,12 +24,14 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+GAME_DATA = os.path.join(ROOT, 'DSAVANT')
 sys.path.insert(0, HERE)
 import c16  # noqa: E402
 
@@ -81,8 +83,8 @@ def run(argv, **kw):
 class Target:
     def __init__(self, name):
         self.name = name
-        self.out = os.path.join(ROOT, 'build_out', name)
-        self.obj = os.path.join(self.out, 'obj')
+        self.out = GAME_DATA
+        self.obj = os.path.join(ROOT, 'build_out', name + '_obj')
         if name == 'linux':
             self.cc, self.cxx = 'gcc', 'g++'
             self.ld, self.objcopy, self.nm = 'ld', 'objcopy', 'nm'
@@ -94,7 +96,7 @@ class Target:
             pre = 'x86_64-w64-mingw32-'
             self.cc, self.cxx = pre + 'gcc', pre + 'g++'
             self.ld, self.objcopy, self.nm = pre + 'ld', pre + 'objcopy', pre + 'nm'
-            self.exe = 'DS.exe'
+            self.exe = 'DS_WIN.exe'
             self.cflags = []
             prefix = os.environ.get('MINGW_SDL3_PREFIX', '/usr/local/x86_64-w64-mingw32')
             env = dict(os.environ, PKG_CONFIG_LIBDIR=prefix + '/lib/pkgconfig',
@@ -378,11 +380,21 @@ def closure(t, objs, library, syms):
 # ---- main --------------------------------------------------------------------
 
 def main():
-    target = Target(os.environ.get('TARGET', 'linux'))
     force = os.environ.get('FORCE') == '1'
     jobs = int(os.environ.get('JOBS') or os.cpu_count() or 4)
     stubs = os.environ.get('STUBS', '1') == '1'
     only_compile = os.environ.get('COMPILE_ONLY') == '1'
+    os.makedirs(GAME_DATA, exist_ok=True)
+    for name in ('linux', 'win'):
+        print('building %s' % name, flush=True)
+        build_target(Target(name), force, jobs, stubs, only_compile)
+
+
+def build_target(target, force, jobs, stubs, only_compile):
+    # Keep game files and saves in DSAVANT; rebuild intermediate files cleanly.
+    if os.path.isdir(target.obj):
+        shutil.rmtree(target.obj)
+    os.makedirs(target.obj)
 
     groups = {}         # group -> list of sources
     groups['ds'] = [s for d in DS_DIRS for s in c_files(game(d))]
@@ -520,7 +532,7 @@ def link(t, groups, files, host_objs, stubs, jobs):
         if t.name == 'linux':
             argv += ['-no-pie', '-lm', '-lstdc++', '-pthread']
         else:
-            argv += ['-static-libgcc', '-static-libstdc++', '-mconsole']
+            argv += ['-static-libgcc', '-static-libstdc++', '-mwindows']
         r = run(argv, cwd=ROOT)
         if r.returncode == 0:
             break
@@ -547,7 +559,8 @@ def link(t, groups, files, host_objs, stubs, jobs):
         print('stubbed %d functions, %d data symbols (see %s)' % (
             len(funcs), len(data), os.path.relpath(stub_c, ROOT)))
     print('linked %s' % os.path.relpath(exe, ROOT))
-    copy_game(t)
+    if t.name == 'win':
+        shutil.copy2(t.sdl_dll, os.path.join(t.out, 'SDL3.dll'))
 
 
 def symbol_kind(t, name, objs):
@@ -578,36 +591,6 @@ def write_stubs(path, names):
         else:
             lines.append('_Alignas(16) char %s[65536];' % name)
     write_if_changed(path, '\n'.join(lines) + '\n')
-
-
-def copy_game(t):
-    """The original game's files into the output directory, keeping what is
-    there (saves)."""
-    src = os.path.join(ROOT, 'apps', 'DSAVANT')
-    if not os.path.isdir(src):
-        print('build: no %s: the output has no game data' % os.path.relpath(src, ROOT))
-        return
-    import shutil
-    skip = {'DS.EXE', 'VGA.DRV', 'EGA.DRV', 'PLAY.DRV'}
-    copied = 0
-    for name in sorted(os.listdir(src)):
-        if name.upper() in skip or name.upper().endswith('.OVR'):
-            continue
-        dst = os.path.join(t.out, name)
-        if os.path.exists(dst):
-            continue
-        p = os.path.join(src, name)
-        if os.path.isdir(p):
-            shutil.copytree(p, dst)
-        else:
-            shutil.copy2(p, dst)
-        copied += 1
-    if copied:
-        print('copied %d game file(s) from apps/DSAVANT' % copied)
-    if t.name == 'win':
-        dll = os.path.join(t.out, 'SDL3.dll')
-        if mtime(dll) < mtime(t.sdl_dll):
-            shutil.copy2(t.sdl_dll, dll)
 
 
 if __name__ == '__main__':
