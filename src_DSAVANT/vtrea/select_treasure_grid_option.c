@@ -56,7 +56,7 @@ int *option_flags;
 
 	option_count = 0;
 	selection = 0;
-	while (option_flags[selection] != -1) {
+	while (selection < max_options && option_flags[selection] != -1) {
 		if (option_flags[selection] == 1) {
 			load_message_string(message_base + selection,
 				text_rows + 80 + option_count * 20);

@@ -20,7 +20,7 @@ int object_index;
 	int outer, inner, member;
 	int unused_frame_words[6];
 	int initial_action_status;
-	int menu_options[3];
+	int menu_options[4];
 	int menu_result, packed_level, difficulty, door_requirement;
 	char label[80];
 
@@ -39,6 +39,7 @@ int object_index;
 	do {
 		menu_options[outer] = 1;
 	} while (++outer <= 2);
+	menu_options[3] = -1;
 	initial_action_status = -1;
 	for (;;) {
 		treasure_caption_on = 1;
